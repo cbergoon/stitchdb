@@ -1,8 +1,6 @@
 package main
 
-import (
-	"sync"
-)
+import ()
 
 type BucketOptions struct {
 	//On Eviction Function
@@ -25,4 +23,3 @@ func NewBucketOptions(options ...func(*BucketOptions) error) (*BucketOptions, er
 	}
 	return c, nil
 }
-

@@ -1,11 +1,6 @@
 package main
 
-type RWMode int
-
-const (
-	MODE_READ RWMode = iota
-	MODE_READ_WRITE
-)
+import "time"
 
 type RbCtx struct {
 	//Everything that we may want to roll back.
@@ -14,6 +9,7 @@ type RbCtx struct {
 type Tx struct {
 	mode  RWMode
 	db    *StitchDB
+	bkt   *Bucket
 	rbctx *RbCtx
 }
 
@@ -22,22 +18,43 @@ func NewTx() (*Tx, error) {
 }
 
 func (t *Tx) RollbackTx() error {
+	//Rollback changes
+	t.unlock()
 	return nil
 }
 
 func (t *Tx) CommitTx() error {
+	if !t.db.open {
+		//Todo: return error
+	}
+	//tx is write tx
+	if t.mode == MODE_READ_WRITE {
+
+	}
+	//Commit changes
+	//write set write delete
+	//sync file
+	t.unlock()
 	return nil
 }
 
 func (t *Tx) lock() {
-	return
+	if t.mode == MODE_READ {
+		t.bkt.Lock.RLock()
+	} else if t.mode == MODE_READ_WRITE {
+		t.bkt.Lock.Lock()
+	}
 }
 
 func (t *Tx) unlock() {
-	return
+	if t.mode == MODE_READ {
+		t.bkt.Lock.RUnlock()
+	} else if t.mode == MODE_READ_WRITE {
+		t.bkt.Lock.Unlock()
+	}
 }
 
-func (t *Tx) Ascend() error {
+func (t *Tx) Ascend(f func()) error {
 	return nil
 }
 
@@ -53,30 +70,6 @@ func (t *Tx) DescendIndex() error {
 	return nil
 }
 
-func (t *Tx) AscendIndexRange() error {
-	return nil
-}
-
-func (t *Tx) DescendIndexRange() error {
-	return nil
-}
-
-func (t *Tx) AscendIndexLessThan() error {
-	return nil
-}
-
-func (t *Tx) DescendIndexLessOrGreater() error {
-	return nil
-}
-
-func (t *Tx) AscendIndexLessOrGreater() error {
-	return nil
-}
-
-func (t *Tx) DescendIndexLessThan() error {
-	return nil
-}
-
 func (t *Tx) Get() error {
 	return nil
 }
@@ -89,14 +82,34 @@ func (t *Tx) Delete() error {
 	return nil
 }
 
-func (t *Tx) CreateIndex() error {
+func (t *Tx) CreateIndex(index string, pattern string) error {
 	return nil
 }
 
-func (t *Tx) DropIndex() error {
+func (t *Tx) DropIndex(index string) error {
 	return nil
 }
 
-func (t *Tx) Indexes() error {
-	return nil
+func (t *Tx) Indexes() ([]string, error) {
+	return nil, nil
+}
+
+func (t *Tx) Min() (*Entry, error) {
+	return nil, nil
+}
+
+func (t *Tx) Max() (*Entry, error) {
+	return nil, nil
+}
+
+func (t *Tx) Has(e *Entry) (bool, error) {
+	return false, nil
+}
+
+func (t *Tx) Degree() (int, error) {
+	return nil, nil
+}
+
+func (t *Tx) ExpiresIn(key string) (time.Duration, error) {
+	return nil, nil
 }

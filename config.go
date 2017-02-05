@@ -63,7 +63,12 @@ func PerformanceMonitor(c *Config) error {
 }
 
 func NewConfig(options ...func(*Config) error) (*Config, error) {
-	c := &Config{}
+	// Defaults for required values
+	c := &Config{
+		Sync: EACH,
+		DirPath: "stitch.db",
+		ManageFrequency: time.Second * time.Duration(1 * time.Second),
+	}
 	for _, option := range options {
 		err := option(c)
 		if err != nil {

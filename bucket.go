@@ -1,23 +1,39 @@
 package main
 
 import (
-	"github.com/cbergoon/btree"
 	"os"
 	"sync"
+	"time"
+
+	//Allow both implementations
+	"github.com/cbergoon/btree"
 )
 
 type Bucket struct {
 	Name     string
+	Db       *StitchDB
 	Lock     sync.RWMutex
 	Data     *btree.BTree
 	Eviction *btree.BTree
 	Indexes  map[string]*btree.BTree
-	file     *os.File
+	File     *os.File
 	Options  *BucketOptions
 }
 
-func NewBucket(bucketOptions *BucketOptions) (*Bucket, error) {
+func NewBucket(db *StitchDB, bucketOptions *BucketOptions) (*Bucket, error) {
 	return nil, nil
+}
+
+func (b *Bucket) InstantiateBucket(bucket, file string) error {
+	return nil
+}
+
+func (b *Bucket) Close() error {
+	//call sync
+	//close files
+	//set open false
+	//set all refs to nil
+	return nil
 }
 
 func (b *Bucket) StartTx() (*Tx, error) {
@@ -25,7 +41,6 @@ func (b *Bucket) StartTx() (*Tx, error) {
 	//lock db
 	//create new tx
 	//populate rollback
-
 	return nil, nil
 }
 
@@ -41,9 +56,17 @@ func (b *Bucket) handleTx(mode RWMode, f func(t *Tx) error) error {
 	return err
 }
 
-func (b *Bucket) manger() error {
-	//Remove expires
-	//if sync 1 second and persist file sync
-	//future geo location call backs
+func (b *Bucket) manager() error {
+	mngct := time.NewTicker(b.Db.config.ManageFrequency)
+	defer mngct.Stop()
+	for range mngct.C {
+		//if on "second" frequency write bucket file
+		//for each bucket call bucket manager
+		//Remove expires
+		//if sync 1 second and persist file sync
+		//future geo location call backs
+	}
 	return nil
 }
+
+//Add insert, delete
