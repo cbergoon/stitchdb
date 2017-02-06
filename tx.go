@@ -3,7 +3,7 @@ package main
 import "time"
 
 type RbCtx struct {
-	//Everything that we may want to roll back.
+	//Needed to roll back/commit
 }
 
 type Tx struct {

@@ -24,7 +24,7 @@ func NewBucket(db *StitchDB, bucketOptions *BucketOptions) (*Bucket, error) {
 	return nil, nil
 }
 
-func (b *Bucket) InstantiateBucket(bucket, file string) error {
+func (b *Bucket) OpenBucket(bucket, file string) error {
 	return nil
 }
 

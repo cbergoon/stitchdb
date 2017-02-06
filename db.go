@@ -6,15 +6,18 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
-
-// Notes: The name came from a function in a legacy codebase called StitchGeo which took sets time series geo
-// information and and coalesced them together intelligently.
 
 const (
 	BUCKET_CONFIG_FILE    string = "sbkt.conf"
 	BUCKET_FILE_EXTENSION string = ".stitch"
 )
+
+type DBContext struct {
+	bucketAdd    []string
+	bucketRemove []string
+}
 
 type StitchDB struct {
 	config     *Config
@@ -24,6 +27,7 @@ type StitchDB struct {
 	system     *Bucket
 	filelock   sync.Mutex
 	bktcfgfile *os.File
+	context    *DBContext
 }
 
 func NewStitchDB(config *Config) (*StitchDB, error) {
@@ -86,7 +90,7 @@ func (db *StitchDB) Open() error {
 				//Todo: error
 			}
 			db.buckets[bktName] = bucket
-			db.buckets[bktName].InstantiateBucket(bktName, bktFilePath)
+			db.buckets[bktName].OpenBucket(bktName, bktFilePath)
 		}
 	}
 	db.open = true
@@ -98,7 +102,7 @@ func (db *StitchDB) Close() error {
 	if !db.open {
 		//Todo: return error db is closed
 	}
-	//Todo: Lock DB?
+	db.lock(MODE_READ_WRITE)
 	for key := range db.buckets {
 		err := db.buckets[key].Close()
 		if err != nil {
@@ -107,43 +111,79 @@ func (db *StitchDB) Close() error {
 		db.buckets[key] = nil
 	}
 	db.system.Close()
-	err := db.bktcfgfile.Sync()
-	if err != nil {
-		//Todo: log error
-	}
-	err = db.bktcfgfile.Close()
-	if err != nil {
-		//Todo: log error
+	if db.config.Persist {
+		if db.bktcfgfile != nil {
+			err := db.bktcfgfile.Sync()
+			if err != nil {
+				//Todo: log error
+			}
+			err = db.bktcfgfile.Close()
+			if err != nil {
+				//Todo: log error
+			}
+		}
 	}
 	db.open = false
 	db.buckets = nil
 	db.system = nil
 	db.bktcfgfile = nil
-	//Todo: Unlock DB?
+	// Pause for ManageFrequency * 2 to allow bucket managers to exit gracefully.
+	time.Sleep(db.config.ManageFrequency * 2)
+	db.unlock(MODE_READ_WRITE)
+	return nil
+}
+
+func (db *StitchDB) persistBucketConfig() error {
+	//Rewrite file since it will be very short
+	//call sync/flush
 	return nil
 }
 
 func (db *StitchDB) runManager() error {
-	//if on "second" frequency write bucket config file
-	//for each bucket call bucket manager
+	go func() {
+		mngct := time.NewTicker(db.config.ManageFrequency)
+		defer mngct.Stop()
+		for range mngct.C {
+			db.lock(MODE_READ_WRITE)
+			if db.config.Persist && db.config.Sync == SECOND {
+				if len(db.context.bucketAdd) > 0 || len(db.context.bucketRemove) > 0 {
+					db.persistBucketConfig()
+				}
+			}
+			db.unlock(MODE_READ_WRITE)
+		}
+	}()
+	if db.system != nil {
+		go db.system.manager()
+	}
+	for key := range db.buckets {
+		go db.buckets[key].manager()
+	}
 	return nil
 }
 
 func (db *StitchDB) GetConfig() *Config {
+	db.lock(MODE_READ)
+	defer db.unlock(MODE_READ)
 	return db.config
 }
 
 func (db *StitchDB) SetConfig(config *Config) {
+	db.lock(MODE_READ_WRITE)
+	defer db.unlock(MODE_READ_WRITE)
 	db.config = config
 }
 
 func (db *StitchDB) getBucket(name string) (*Bucket, error) {
+	db.lock(MODE_READ)
+	defer db.unlock(MODE_READ)
 	var b *Bucket
 	var ok bool
+	bktName := strings.TrimSpace(name)
 	if name == "_sys" {
 		b = db.system
 	} else {
-		b, ok = db.buckets[name]
+		b, ok = db.buckets[bktName]
 	}
 	if !ok {
 		//Todo: Error bucket does not exist
@@ -173,15 +213,44 @@ func (db *StitchDB) Update(bucket string, f func(t *Tx) error) error {
 	return b.handleTx(MODE_READ_WRITE, f)
 }
 
-//func (db *StitchDB) runTx(bucket string, write bool, f func(t *Tx) error) error {
-//	return nil
-//}
-
 func (db *StitchDB) CreateBucket(name string, options *BucketOptions) error {
+	db.lock(MODE_READ_WRITE)
+	if !db.open {
+		//Todo: error
+	}
+	bkt, err := db.getBucket(name)
+	if bkt != nil || err == nil {
+		//Todo: error bucket already exists
+	}
+
+	bktName := strings.TrimSpace(name)
+	bktFilePath := db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION)
+	bucket, err := NewBucket(db, options)
+	if err != nil {
+		//Todo: error
+	}
+
+	db.buckets[bktName] = bucket
+	db.buckets[bktName].OpenBucket(bktName, bktFilePath)
+	db.unlock(MODE_READ_WRITE)
+	go db.buckets[bktName].manager()
 	return nil
 }
 
 func (db *StitchDB) DropBucket(name string) error {
+	db.lock(MODE_READ_WRITE)
+	defer db.unlock(MODE_READ_WRITE)
+	if !db.open {
+		//Todo: error
+	}
+	bktName := strings.TrimSpace(name)
+	bkt, err := db.getBucket(bktName)
+	if err != nil {
+		//Todo: error
+	}
+	bkt.Close()
+	bkt = nil
+	delete(db.buckets, bktName)
 	return nil
 }
 
