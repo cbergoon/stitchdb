@@ -1,9 +1,10 @@
 package main
 
-import ()
-
 type BucketOptions struct {
+	system bool
+	btdeg  int
 	//On Eviction Function
+	//On Invalidation Function
 	//Is Geo?
 	//On Geo Beacon is in Target Range Function
 	//Geo Range is inclusive?

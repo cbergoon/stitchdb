@@ -9,21 +9,23 @@ var (
 	ErrCouldNotCreateConfig = errors.New("config: could not create configuration")
 )
 
-type SyncFrequency int
+type IOFrequency int
 
 const (
-	EACH SyncFrequency = iota
-	SECOND
+	EACH    IOFrequency = iota
+	MNGFREQ
 	NONE
 )
 
 type Config struct {
-	Persist            bool
-	DirPath            string
-	Sync               SyncFrequency
-	ManageFrequency    time.Duration
-	Developer          bool
-	PerformanceMonitor bool
+	Persist             bool
+	DirPath             string
+	SyncFreq            IOFrequency
+	WriteFreq           IOFrequency
+	ManageFrequency     time.Duration
+	Developer           bool
+	PerformanceMonitor  bool
+	BucketFileMultLimit int
 }
 
 func Persist(c *Config) error {
@@ -38,9 +40,9 @@ func DirPath(path string) func(*Config) error {
 	}
 }
 
-func Sync(frequency SyncFrequency) func(*Config) error {
+func Sync(frequency IOFrequency) func(*Config) error {
 	return func(c *Config) error {
-		c.Sync = frequency
+		c.SyncFreq = frequency
 		return nil
 	}
 }
@@ -62,12 +64,20 @@ func PerformanceMonitor(c *Config) error {
 	return nil
 }
 
+func BucketFileMultLimit(limit int) func(*Config) error {
+	return func(c *Config) error {
+		c.BucketFileMultLimit = limit
+		return nil
+	}
+}
+
 func NewConfig(options ...func(*Config) error) (*Config, error) {
 	// Defaults for required values
 	c := &Config{
-		Sync: EACH,
-		DirPath: "stitch.db",
-		ManageFrequency: time.Second * time.Duration(1 * time.Second),
+		SyncFreq:            EACH,
+		DirPath:             "stitch.db",
+		ManageFrequency:     time.Second * time.Duration(1*time.Second),
+		BucketFileMultLimit: 10,
 	}
 	for _, option := range options {
 		err := option(c)
