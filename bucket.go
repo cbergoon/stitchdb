@@ -10,18 +10,28 @@ import (
 )
 
 type Bucket struct {
-	Name     string
-	Db       *StitchDB
-	Lock     sync.RWMutex
-	Data     *btree.BTree
-	Eviction *btree.BTree
-	Indexes  map[string]*btree.BTree
-	File     *os.File
-	Options  *BucketOptions
+	Name         string
+	Db           *StitchDB
+	Lock         sync.RWMutex
+	Data         *btree.BTree
+	Eviction     *btree.BTree
+	Invalidation *btree.BTree
+	Indexes      map[string]*btree.BTree
+	File         *os.File
+	Options      *BucketOptions
+	aofbuf       []byte
 }
 
-func NewBucket(db *StitchDB, bucketOptions *BucketOptions) (*Bucket, error) {
-	return nil, nil
+func NewBucket(db *StitchDB, bucketOptions *BucketOptions, name string) (*Bucket, error) {
+	return &Bucket{
+		Name:         name,
+		Db:           db,
+		Options:      bucketOptions,
+		Data:         btree.New(bucketOptions.btdeg, nil),
+		Eviction:     btree.New(bucketOptions.btdeg, nil),
+		Invalidation: btree.New(bucketOptions.btdeg, nil),
+		Indexes:      make(map[string]*btree.BTree),
+	}, nil
 }
 
 func (b *Bucket) OpenBucket(bucket, file string) error {
@@ -67,6 +77,22 @@ func (b *Bucket) manager() error {
 		//future geo location call backs
 	}
 	return nil
+}
+
+func (b *Bucket) bucketCreateStmt() []byte {
+	var cbuf []byte
+	cbuf = append(cbuf, "CREATE"...)
+	cbuf = append(cbuf, ':')
+	cbuf = append(cbuf, b.Name...)
+	return append(cbuf, '\n')
+}
+
+func (b *Bucket) bucketDropStmt() []byte {
+	var cbuf []byte
+	cbuf = append(cbuf, "DROP"...)
+	cbuf = append(cbuf, ':')
+	cbuf = append(cbuf, b.Name...)
+	return append(cbuf, '\n')
 }
 
 //Add insert, delete
