@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"sync"
@@ -15,13 +16,13 @@ const (
 )
 
 type StitchDB struct {
-	config       *Config
-	dblock       sync.RWMutex
-	open         bool
-	buckets      map[string]*Bucket
-	system       *Bucket
-	bktcfgfile   *os.File
-	bktcfgfilerc int
+	config    *Config
+	dblock    sync.RWMutex
+	open      bool
+	buckets   map[string]*Bucket
+	system    *Bucket
+	bktcfgf   *os.File
+	bktcfgfrc int
 }
 
 func NewStitchDB(config *Config) (*StitchDB, error) {
@@ -29,7 +30,7 @@ func NewStitchDB(config *Config) (*StitchDB, error) {
 		config:  config,
 		buckets: make(map[string]*Bucket),
 	}
-	sysbktopts, err := NewBucketOptions() //Todo: set appropriate bucket options for sys
+	sysbktopts, err := NewBucketOptions(BTreeDegree(32)) //Todo: set appropriate bucket options for sys
 	if err != nil {
 		//Todo: Error
 		return nil, errors.New("error: failed to create system bucket options")
@@ -43,25 +44,43 @@ func NewStitchDB(config *Config) (*StitchDB, error) {
 	return stitch, nil
 }
 
-func (db *StitchDB) readConfigFileBuckets() ([]string, error) {
-	db.lock(MODE_READ)
-	defer db.unlock(MODE_READ)
+func (db *StitchDB) readConfigFileBuckets() (map[string][]string, error) {
 	lines := make([]string, 0)
 	var err error
-	db.bktcfgfile, err = os.OpenFile(db.getDBFilePath(BUCKET_CONFIG_FILE), os.O_CREATE|os.O_RDWR, 0666)
+	db.bktcfgf, err = os.OpenFile(db.getDBFilePath(BUCKET_CONFIG_FILE), os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		return nil, err
 	}
-	scanner := bufio.NewScanner(db.bktcfgfile)
+	scanner := bufio.NewScanner(db.bktcfgf)
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
-		db.bktcfgfilerc++
+		db.bktcfgfrc++
 	}
 	// check for errors
 	if err = scanner.Err(); err != nil {
 		return nil, err
 	}
-	return lines, nil
+	stmtMap := make(map[string][]string)
+	for _, line := range lines {
+		name, detail, err := parseStmtTypeName(line)
+		if err != nil {
+			//Todo: error
+		}
+		stmtMap[name] = detail
+	}
+	return stmtMap, nil
+}
+
+func parseStmtTypeName(stmt string) (string, []string, error) {
+	parts := strings.Split(stmt, ":")
+	if len(parts) == 7 && parts[0] == "CREATE" {
+		return strings.TrimSpace(parts[1]), parts[1:], nil
+	} else if len(parts) == 2 && parts[0] == "DROP" {
+		return strings.TrimSpace(parts[1]), nil, nil
+	} else {
+		//Todo: Error invalid stmt
+		return "", nil, nil
+	}
 }
 
 func (db *StitchDB) getDBFilePath(fileName string) string {
@@ -72,24 +91,23 @@ func (db *StitchDB) Open() error {
 	db.lock(MODE_READ_WRITE)
 	defer db.unlock(MODE_READ_WRITE)
 	if db.config.Persist {
-		bkts, err := db.readConfigFileBuckets()
+		err := os.MkdirAll(db.config.DirPath, os.ModePerm)
+		if err != nil {
+			//Todo: error
+		}
+		bktStmts, err := db.readConfigFileBuckets()
 		if err != nil {
 			//Todo: error could not read file
 		}
-		for _, bkt := range bkts {
-			//Read and load bucket
-			bktName := strings.TrimSpace(bkt)
-			bktFilePath := db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION)
-			opts, err := NewBucketOptions()
-			if err != nil {
-				//Todo: error
+		for bktName, bktStmtParts := range bktStmts {
+			if bktStmtParts != nil && len(bktStmtParts) > 0 {
+				bucket, err := NewBucketFromStmt(db, bktStmts[bktName])
+				if err != nil {
+					//Todo: error
+				}
+				db.buckets[bktName] = bucket
 			}
-			bucket, err := NewBucket(db, opts, bktName)
-			if err != nil {
-				//Todo: error
-			}
-			db.buckets[bktName] = bucket
-			db.buckets[bktName].OpenBucket(bktName, bktFilePath)
+			db.buckets[bktName].OpenBucket(db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION))
 		}
 	}
 	db.open = true
@@ -111,12 +129,12 @@ func (db *StitchDB) Close() error {
 		db.buckets[key] = nil
 	}
 	db.system.Close()
-	if db.config.Persist && db.bktcfgfile != nil {
-		err := db.bktcfgfile.Sync()
+	if db.config.Persist && db.bktcfgf != nil {
+		err := db.bktcfgf.Sync()
 		if err != nil {
 			//Todo: log error
 		}
-		err = db.bktcfgfile.Close()
+		err = db.bktcfgf.Close()
 		if err != nil {
 			//Todo: log error
 		}
@@ -124,7 +142,7 @@ func (db *StitchDB) Close() error {
 	db.open = false
 	db.buckets = nil
 	db.system = nil
-	db.bktcfgfile = nil
+	db.bktcfgf = nil
 	// Pause for ManageFrequency * 2 to allow bucket managers to exit gracefully.
 	time.Sleep(db.config.ManageFrequency * 2)
 	return nil
@@ -140,22 +158,22 @@ func (db *StitchDB) runManager() error {
 			}
 			db.lock(MODE_READ_WRITE)
 			if db.config.Persist {
-				if len(db.buckets)*10 > db.bktcfgfilerc {
+				if len(db.buckets)*10 > db.bktcfgfrc {
 					//Clear File
-					db.bktcfgfile.Truncate(0)
-					db.bktcfgfile.Seek(0, 0)
+					db.bktcfgf.Truncate(0)
+					db.bktcfgf.Seek(0, 0)
 					//Rewrite File
 					for key := range db.buckets {
 						stmt := db.buckets[key].bucketCreateStmt()
-						db.bktcfgfile.Write(stmt)
+						db.bktcfgf.Write(stmt)
 					}
-					db.bktcfgfilerc = len(db.buckets)
+					db.bktcfgfrc = len(db.buckets)
 					if db.config.SyncFreq == EACH {
-						db.bktcfgfile.Sync()
+						db.bktcfgf.Sync()
 					}
 				}
 				if db.config.SyncFreq == MNGFREQ {
-					db.bktcfgfile.Sync()
+					db.bktcfgf.Sync()
 				}
 			}
 			db.unlock(MODE_READ_WRITE)
@@ -183,8 +201,8 @@ func (db *StitchDB) SetConfig(config *Config) {
 }
 
 func (db *StitchDB) getBucket(name string) (*Bucket, error) {
-	db.lock(MODE_READ)
-	defer db.unlock(MODE_READ)
+	//db.lock(MODE_READ)
+	//defer db.unlock(MODE_READ)
 	var b *Bucket
 	var ok bool
 	bktName := strings.TrimSpace(name)
@@ -195,6 +213,7 @@ func (db *StitchDB) getBucket(name string) (*Bucket, error) {
 	}
 	if !ok {
 		//Todo: Error bucket does not exist
+		return nil, errors.New("Bucket does not exist")
 	}
 	return b, nil
 }
@@ -233,23 +252,26 @@ func (db *StitchDB) CreateBucket(name string, options *BucketOptions) error {
 	if !db.open {
 		//Todo: error
 	}
+
 	bkt, err := db.getBucket(name)
 	if bkt != nil || err == nil {
 		//Todo: error bucket already exists
 	}
+	fmt.Println("here")
 	bktName := strings.TrimSpace(name)
 	bktFilePath := db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION)
 	bucket, err := NewBucket(db, options, bktName)
 	if err != nil {
 		//Todo: error
 	}
-	db.buckets[bktName] = bucket
-	db.buckets[bktName].OpenBucket(bktName, bktFilePath)
 
-	if db.config.Persist && db.bktcfgfile != nil {
+	db.buckets[bktName] = bucket
+	db.buckets[bktName].OpenBucket(bktFilePath)
+
+	if db.config.Persist && db.bktcfgf != nil {
 		stmt := bucket.bucketCreateStmt()
-		db.bktcfgfile.Write(stmt)
-		db.bktcfgfilerc++
+		db.bktcfgf.Write(stmt)
+		db.bktcfgfrc++
 		if db.config.SyncFreq == EACH {
 			bucket.File.Sync()
 		}
@@ -275,9 +297,9 @@ func (db *StitchDB) DropBucket(name string) error {
 	bucket = nil
 	delete(db.buckets, bktName)
 
-	if db.config.Persist && db.bktcfgfile != nil {
-		db.bktcfgfile.Write(stmt)
-		db.bktcfgfilerc++
+	if db.config.Persist && db.bktcfgf != nil {
+		db.bktcfgf.Write(stmt)
+		db.bktcfgfrc++
 		if db.config.SyncFreq == EACH {
 			bucket.File.Sync()
 		}
