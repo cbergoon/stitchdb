@@ -107,9 +107,9 @@ func (t *Tx) Has(e *Entry) (bool, error) {
 }
 
 func (t *Tx) Degree() (int, error) {
-	return nil, nil
+	return 0, nil
 }
 
 func (t *Tx) ExpiresIn(key string) (time.Duration, error) {
-	return nil, nil
+	return time.Second, nil
 }
