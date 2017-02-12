@@ -10,15 +10,15 @@ import (
 )
 
 type Bucket struct {
-	Name         string
-	Db           *StitchDB
-	Lock         sync.RWMutex
-	Data         *btree.BTree
-	Eviction     *btree.BTree
-	Invalidation *btree.BTree
-	Indexes      map[string]*Index
-	File         *os.File
-	Options      *BucketOptions
+	name         string
+	db           *StitchDB
+	lock         sync.RWMutex
+	data         *btree.BTree
+	eviction     *btree.BTree
+	invalidation *btree.BTree
+	indexes      map[string]*Index
+	file         *os.File
+	options      *BucketOptions
 	aofbuf       []byte
 }
 
@@ -30,18 +30,15 @@ type iItype struct {
 	db *StitchDB
 }
 
-type Index struct {
-}
-
 func NewBucket(db *StitchDB, bucketOptions *BucketOptions, name string) (*Bucket, error) {
 	return &Bucket{
-		Name:         name,
-		Db:           db,
-		Options:      bucketOptions,
-		Data:         btree.New(bucketOptions.btdeg, nil),
-		Eviction:     btree.New(bucketOptions.btdeg, &eItype{db: db}),
-		Invalidation: btree.New(bucketOptions.btdeg, &iItype{db: db}),
-		Indexes:      make(map[string]*Index),
+		name:         name,
+		db:           db,
+		options:      bucketOptions,
+		data:         btree.New(bucketOptions.btdeg, nil),
+		eviction:     btree.New(bucketOptions.btdeg, &eItype{db: db}),
+		invalidation: btree.New(bucketOptions.btdeg, &iItype{db: db}),
+		indexes:      make(map[string]*Index),
 	}, nil
 }
 
@@ -78,7 +75,7 @@ func (b *Bucket) handleTx(mode RWMode, f func(t *Tx) error) error {
 }
 
 func (b *Bucket) manager() error {
-	mngct := time.NewTicker(b.Db.config.ManageFrequency)
+	mngct := time.NewTicker(b.db.config.ManageFrequency)
 	defer mngct.Stop()
 	for range mngct.C {
 		//if on "second" frequency write bucket file
@@ -94,9 +91,9 @@ func (b *Bucket) bucketCreateStmt() []byte {
 	var cbuf []byte
 	cbuf = append(cbuf, "CREATE"...)
 	cbuf = append(cbuf, ':')
-	cbuf = append(cbuf, b.Name...)
+	cbuf = append(cbuf, b.name...)
 	cbuf = append(cbuf, ':')
-	cbuf = append(cbuf, b.Options.bucketOptionsCreateStmt()...)
+	cbuf = append(cbuf, b.options.bucketOptionsCreateStmt()...)
 	return append(cbuf, '\n')
 }
 
@@ -104,7 +101,7 @@ func (b *Bucket) bucketDropStmt() []byte {
 	var cbuf []byte
 	cbuf = append(cbuf, "DROP"...)
 	cbuf = append(cbuf, ':')
-	cbuf = append(cbuf, b.Name...)
+	cbuf = append(cbuf, b.name...)
 	return append(cbuf, '\n')
 }
 
@@ -114,6 +111,10 @@ func NewBucketFromStmt(db *StitchDB, stmtParts []string) (*Bucket, error) {
 		//Todo: error here
 	}
 	return NewBucket(db, opts, stmtParts[0])
+}
+
+type Index struct {
+	t *btree.BTree
 }
 
 //Add insert, delete

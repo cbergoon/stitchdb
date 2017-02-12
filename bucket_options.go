@@ -12,7 +12,7 @@ type BucketOptions struct {
 	time     bool
 }
 
-//Implement Bucket Options Here
+//Implement Bucket options Here
 
 func System(b *BucketOptions) error {
 	b.system = true
@@ -104,8 +104,8 @@ func boolToInt(b bool) int {
 	return 0
 }
 
-//On Eviction Function Move to Item
-//On Invalidation Function Move to Item
+//On eviction Function Move to Item
+//On invalidation Function Move to Item
 //Is Geo?
 //On Geo Beacon is in Target Range Function Move to Item
 //Geo Range is inclusive?
