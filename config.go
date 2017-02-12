@@ -18,55 +18,55 @@ const (
 )
 
 type Config struct {
-	Persist             bool
-	DirPath             string
-	SyncFreq            IOFrequency
-	WriteFreq           IOFrequency
-	ManageFrequency     time.Duration
-	Developer           bool
-	PerformanceMonitor  bool
-	BucketFileMultLimit int
+	persist             bool
+	dirPath             string
+	syncFreq            IOFrequency
+	writeFreq           IOFrequency
+	manageFrequency     time.Duration
+	developer           bool
+	performanceMonitor  bool
+	bucketFileMultLimit int
 }
 
 func Persist(c *Config) error {
-	c.Persist = true
+	c.persist = true
 	return nil
 }
 
 func DirPath(path string) func(*Config) error {
 	return func(c *Config) error {
-		c.DirPath = path
+		c.dirPath = path
 		return nil
 	}
 }
 
 func Sync(frequency IOFrequency) func(*Config) error {
 	return func(c *Config) error {
-		c.SyncFreq = frequency
+		c.syncFreq = frequency
 		return nil
 	}
 }
 
 func ManageFrequency(frequency time.Duration) func(*Config) error {
 	return func(c *Config) error {
-		c.ManageFrequency = frequency
+		c.manageFrequency = frequency
 		return nil
 	}
 }
 
 func Developer(c *Config) error {
-	c.Developer = true
+	c.developer = true
 	return nil
 }
 
 func PerformanceMonitor(c *Config) error {
-	c.PerformanceMonitor = true
+	c.performanceMonitor = true
 	return nil
 }
 
 func BucketFileMultLimit(limit int) func(*Config) error {
 	return func(c *Config) error {
-		c.BucketFileMultLimit = limit
+		c.bucketFileMultLimit = limit
 		return nil
 	}
 }
@@ -74,10 +74,10 @@ func BucketFileMultLimit(limit int) func(*Config) error {
 func NewConfig(options ...func(*Config) error) (*Config, error) {
 	// Defaults for required values
 	c := &Config{
-		SyncFreq:            EACH,
-		DirPath:             "stitch.db",
-		ManageFrequency:     time.Second * time.Duration(1*time.Second),
-		BucketFileMultLimit: 10,
+		syncFreq:            EACH,
+		dirPath:             "stitch.db",
+		manageFrequency:     time.Second * time.Duration(1*time.Second),
+		bucketFileMultLimit: 10,
 	}
 	for _, option := range options {
 		err := option(c)

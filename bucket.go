@@ -5,19 +5,19 @@ import (
 	"sync"
 	"time"
 
-	//Allow both implementations
 	"github.com/cbergoon/btree"
 )
 
 type Bucket struct {
 	name         string
 	db           *StitchDB
-	lock         sync.RWMutex
+	bktlock      sync.RWMutex
 	data         *btree.BTree
 	eviction     *btree.BTree
 	invalidation *btree.BTree
 	indexes      map[string]*Index
 	file         *os.File
+	open         bool
 	options      *BucketOptions
 	aofbuf       []byte
 }
@@ -43,15 +43,49 @@ func NewBucket(db *StitchDB, bucketOptions *BucketOptions, name string) (*Bucket
 }
 
 func (b *Bucket) OpenBucket(file string) error {
+	b.lock(MODE_READ_WRITE)
+	defer b.unlock(MODE_READ_WRITE)
+	if b.db.config.persist {
+		var err error
+		b.file, err = os.OpenFile(b.db.getDBFilePath(file), os.O_CREATE|os.O_RDWR, 0666)
+		if err != nil {
+			//Todo: error
+		}
+		//Todo: Populate bucket, eviction and, invalidation
+	}
 	return nil
 }
 
 func (b *Bucket) Close() error {
-	//call sync
-	//close files
-	//set open false
-	//set all refs to nil
+	b.lock(MODE_READ_WRITE)
+	defer b.unlock(MODE_READ_WRITE)
+	if b.db.config.persist {
+		if len(b.aofbuf) > 0 {
+			_, err := b.file.Write(b.aofbuf)
+			if err != nil {
+				//Todo: error
+			}
+		}
+		if err := b.file.Sync(); err != nil {
+			//Todo: error
+		}
+		b.file.Close()
+	}
+	b.open = false
+	b.aofbuf, b.data, b.eviction, b.invalidation, b.indexes = nil, nil, nil, nil, nil
 	return nil
+}
+
+func (b *Bucket) get() {
+	return
+}
+
+func (b *Bucket) insert() {
+	return
+}
+
+func (b *Bucket) delete() {
+	return
 }
 
 func (b *Bucket) StartTx() (*Tx, error) {
@@ -75,16 +109,46 @@ func (b *Bucket) handleTx(mode RWMode, f func(t *Tx) error) error {
 }
 
 func (b *Bucket) manager() error {
-	mngct := time.NewTicker(b.db.config.ManageFrequency)
+	mngct := time.NewTicker(b.db.config.manageFrequency)
 	defer mngct.Stop()
 	for range mngct.C {
-		//if on "second" frequency write bucket file
-		//for each bucket call bucket manager
+		if !b.db.open {
+			break
+		}
+		if b.db.config.persist {
+			if b.db.config.writeFreq == MNGFREQ {
+				if len(b.aofbuf) > 0 {
+					b.file.Write(b.aofbuf)
+					if b.db.config.syncFreq == EACH {
+						b.file.Sync()
+					}
+				}
+			}
+			if b.db.config.syncFreq == MNGFREQ {
+				b.file.Sync()
+			}
+		}
 		//Remove expires
-		//if sync 1 second and persist file sync
+		//invalidate invalid
 		//future geo location call backs
 	}
 	return nil
+}
+
+func (b *Bucket) lock(mode RWMode) {
+	if mode == MODE_READ {
+		b.bktlock.RLock()
+	} else if mode == MODE_READ_WRITE {
+		b.bktlock.Lock()
+	}
+}
+
+func (b *Bucket) unlock(mode RWMode) {
+	if mode == MODE_READ {
+		b.bktlock.RUnlock()
+	} else if mode == MODE_READ_WRITE {
+		b.bktlock.Unlock()
+	}
 }
 
 func (b *Bucket) bucketCreateStmt() []byte {
@@ -112,9 +176,3 @@ func NewBucketFromStmt(db *StitchDB, stmtParts []string) (*Bucket, error) {
 	}
 	return NewBucket(db, opts, stmtParts[0])
 }
-
-type Index struct {
-	t *btree.BTree
-}
-
-//Add insert, delete

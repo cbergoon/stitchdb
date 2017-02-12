@@ -84,14 +84,14 @@ func parseStmtTypeName(stmt string) (string, []string, error) {
 }
 
 func (db *StitchDB) getDBFilePath(fileName string) string {
-	return strings.TrimSpace(db.config.DirPath) + strings.TrimSpace(fileName)
+	return strings.TrimSpace(db.config.dirPath) + strings.TrimSpace(fileName)
 }
 
 func (db *StitchDB) Open() error {
 	db.lock(MODE_READ_WRITE)
 	defer db.unlock(MODE_READ_WRITE)
-	if db.config.Persist {
-		err := os.MkdirAll(db.config.DirPath, os.ModePerm)
+	if db.config.persist {
+		err := os.MkdirAll(db.config.dirPath, os.ModePerm)
 		if err != nil {
 			//Todo: error
 		}
@@ -129,7 +129,7 @@ func (db *StitchDB) Close() error {
 		db.buckets[key] = nil
 	}
 	db.system.Close()
-	if db.config.Persist && db.bktcfgf != nil {
+	if db.config.persist && db.bktcfgf != nil {
 		err := db.bktcfgf.Sync()
 		if err != nil {
 			//Todo: log error
@@ -143,36 +143,36 @@ func (db *StitchDB) Close() error {
 	db.buckets = nil
 	db.system = nil
 	db.bktcfgf = nil
-	// Pause for ManageFrequency * 2 to allow bucket managers to exit gracefully.
-	time.Sleep(db.config.ManageFrequency * 2)
+	// Pause for manageFrequency * 2 to allow bucket managers to exit gracefully.
+	time.Sleep(db.config.manageFrequency * 2)
 	return nil
 }
 
 func (db *StitchDB) runManager() error {
 	go func() {
-		mngct := time.NewTicker(db.config.ManageFrequency)
+		mngct := time.NewTicker(db.config.manageFrequency)
 		defer mngct.Stop()
 		for range mngct.C {
 			if !db.open {
 				break
 			}
 			db.lock(MODE_READ_WRITE)
-			if db.config.Persist {
-				if len(db.buckets)*10 > db.bktcfgfrc {
-					//Clear File
+			if db.config.persist {
+				if len(db.buckets)*db.config.bucketFileMultLimit > db.bktcfgfrc {
+					//Clear file
 					db.bktcfgf.Truncate(0)
 					db.bktcfgf.Seek(0, 0)
-					//Rewrite File
+					//Rewrite file
 					for key := range db.buckets {
 						stmt := db.buckets[key].bucketCreateStmt()
 						db.bktcfgf.Write(stmt)
 					}
 					db.bktcfgfrc = len(db.buckets)
-					if db.config.SyncFreq == EACH {
+					if db.config.syncFreq == EACH {
 						db.bktcfgf.Sync()
 					}
 				}
-				if db.config.SyncFreq == MNGFREQ {
+				if db.config.syncFreq == MNGFREQ {
 					db.bktcfgf.Sync()
 				}
 			}
@@ -268,12 +268,12 @@ func (db *StitchDB) CreateBucket(name string, options *BucketOptions) error {
 	db.buckets[bktName] = bucket
 	db.buckets[bktName].OpenBucket(bktFilePath)
 
-	if db.config.Persist && db.bktcfgf != nil {
+	if db.config.persist && db.bktcfgf != nil {
 		stmt := bucket.bucketCreateStmt()
 		db.bktcfgf.Write(stmt)
 		db.bktcfgfrc++
-		if db.config.SyncFreq == EACH {
-			bucket.File.Sync()
+		if db.config.syncFreq == EACH {
+			db.bktcfgf.Sync()
 		}
 	}
 
@@ -297,11 +297,11 @@ func (db *StitchDB) DropBucket(name string) error {
 	bucket = nil
 	delete(db.buckets, bktName)
 
-	if db.config.Persist && db.bktcfgf != nil {
+	if db.config.persist && db.bktcfgf != nil {
 		db.bktcfgf.Write(stmt)
 		db.bktcfgfrc++
-		if db.config.SyncFreq == EACH {
-			bucket.File.Sync()
+		if db.config.syncFreq == EACH {
+			db.bktcfgf.Sync()
 		}
 	}
 	return nil

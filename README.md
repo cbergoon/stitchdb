@@ -4,6 +4,10 @@ Yet another key value store - a work in progress...
 Stitchd's API is inspired by tidwall/buntdb and boltdb/bolt and makes use of their elegant API design. Stitchd strives 
 to add a feature set that is tailored to a high throughput and less rigidly persistent use case with seamless geolocation support. 
 
+This has also been a great way to dive deeper into the KV/DB worl and understand the problems and some of the solutions that 
+are currently employed to mitigate those challenges. Hopefully, others will find this project usefull if not for use in a project 
+then to learn something from. 
+
 ### Goals
 Stitchd was born out of a need to replace a legacy timeseries/geolocation package with a more robust real-time solution 
 that could standalone as a separate service with little work. It needed to have separation of data or buckets, searchable 

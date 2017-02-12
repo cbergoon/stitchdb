@@ -40,17 +40,17 @@ func (t *Tx) CommitTx() error {
 
 func (t *Tx) lock() {
 	if t.mode == MODE_READ {
-		t.bkt.Lock.RLock()
+		t.bkt.bktlock.RLock()
 	} else if t.mode == MODE_READ_WRITE {
-		t.bkt.Lock.Lock()
+		t.bkt.bktlock.Lock()
 	}
 }
 
 func (t *Tx) unlock() {
 	if t.mode == MODE_READ {
-		t.bkt.Lock.RUnlock()
+		t.bkt.bktlock.RUnlock()
 	} else if t.mode == MODE_READ_WRITE {
-		t.bkt.Lock.Unlock()
+		t.bkt.bktlock.Unlock()
 	}
 }
 
