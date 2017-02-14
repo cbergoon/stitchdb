@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"fmt"
+
 	"github.com/cbergoon/btree"
 )
 
@@ -47,7 +49,8 @@ func (b *Bucket) OpenBucket(file string) error {
 	defer b.unlock(MODE_READ_WRITE)
 	if b.db.config.persist {
 		var err error
-		b.file, err = os.OpenFile(b.db.getDBFilePath(file), os.O_CREATE|os.O_RDWR, 0666)
+		fmt.Println(file)
+		b.file, err = os.OpenFile(file, os.O_CREATE|os.O_RDWR, 0666)
 		if err != nil {
 			//Todo: error
 		}
@@ -76,16 +79,54 @@ func (b *Bucket) Close() error {
 	return nil
 }
 
-func (b *Bucket) get() {
-	return
+func (b *Bucket) get(key *Entry) *Entry {
+	if e := b.data.Get(key); e != nil {
+		return e.(*Entry)
+	}
+	return nil
 }
 
-func (b *Bucket) insert() {
-	return
+func (b *Bucket) insert(entry *Entry) *Entry {
+	var pentry *Entry = nil
+	fmt.Println(b)
+	fmt.Println(b.data)
+	if p := b.data.ReplaceOrInsert(entry); p != nil {
+		pentry = p.(*Entry)
+	}
+	if pentry != nil {
+		if pentry.opts.doesExp {
+			b.eviction.Delete(pentry)
+		}
+		if pentry.opts.doesInv {
+			b.invalidation.Delete(pentry)
+		}
+		//Todo: Iterate through indexes delete pentry
+	}
+	if entry.opts.doesExp {
+		b.eviction.ReplaceOrInsert(entry)
+	}
+	if entry.opts.doesInv {
+		b.invalidation.ReplaceOrInsert(entry)
+	}
+	//Todo: Iterate through indexes insert pentry
+	return pentry
 }
 
-func (b *Bucket) delete() {
-	return
+func (b *Bucket) delete(key *Entry) *Entry {
+	var pentry *Entry
+	if p := b.data.Delete(key); p != nil {
+		pentry = p.(*Entry)
+	}
+	if pentry != nil {
+		if pentry.opts.doesExp {
+			b.eviction.Delete(pentry)
+		}
+		if pentry.opts.doesInv {
+			b.invalidation.Delete(pentry)
+		}
+		//Todo: Iterate through indexes delete pentry
+	}
+	return nil
 }
 
 func (b *Bucket) StartTx() (*Tx, error) {

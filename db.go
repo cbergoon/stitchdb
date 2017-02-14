@@ -106,8 +106,8 @@ func (db *StitchDB) Open() error {
 					//Todo: error
 				}
 				db.buckets[bktName] = bucket
+				db.buckets[bktName].OpenBucket(db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION))
 			}
-			db.buckets[bktName].OpenBucket(db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION))
 		}
 	}
 	db.open = true

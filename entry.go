@@ -9,13 +9,21 @@ type Entry struct {
 }
 
 func NewEntry(k string, v string, options *EntryOptions) (*Entry, error) {
+	opts, err := NewEntryOptions()
+	if err != nil {
+		//Todo: Error
+	}
+	if options != nil {
+		opts = options
+	}
 	return &Entry{
 		k:    k,
 		v:    v,
-		opts: options,
+		opts: opts,
 	}, nil
 }
 
 func (e *Entry) Less(than btree.Item, itype interface{}) bool {
-	return false
+	tl := than.(*Entry)
+	return e.k < tl.k
 }

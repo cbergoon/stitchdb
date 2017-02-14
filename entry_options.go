@@ -3,6 +3,8 @@ package main
 import "time"
 
 type EntryOptions struct {
+	doesExp bool
+	doesInv bool
 	expTime time.Time
 	invTime time.Time
 }
