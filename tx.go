@@ -3,18 +3,27 @@ package main
 import "time"
 
 type RbCtx struct {
-	//Needed to roll back/commit
+	added   []*Entry
+	deleted []*Entry
 }
 
 type Tx struct {
-	mode  RWMode
 	db    *StitchDB
 	bkt   *Bucket
+	mode  RWMode
 	rbctx *RbCtx
 }
 
-func NewTx() (*Tx, error) {
-	return nil, nil
+func NewTx(db *StitchDB, bkt *Bucket, mode RWMode) (*Tx, error) {
+	return &Tx{
+		db:   db,
+		bkt:  bkt,
+		mode: mode,
+		rbctx: &RbCtx{
+			added:   make([]*Entry, 0, 100),
+			deleted: make([]*Entry, 0, 100),
+		},
+	}, nil
 }
 
 func (t *Tx) RollbackTx() error {

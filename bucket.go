@@ -129,23 +129,48 @@ func (b *Bucket) delete(key *Entry) *Entry {
 	return nil
 }
 
-func (b *Bucket) StartTx() (*Tx, error) {
+func (b *Bucket) StartTx(mode RWMode) (*Tx, error) {
 	//if db is not open close
-	//lock db
+	if !b.db.open {
+		//Todo: Error
+	}
 	//create new tx
-	//populate rollback
-	return nil, nil
+	tx, err := NewTx(b.db, b, mode)
+	if err != nil {
+		//Todo: Error
+	}
+	tx.lock()
+	return tx, nil
 }
 
 func (b *Bucket) handleTx(mode RWMode, f func(t *Tx) error) error {
-	tx, err := b.StartTx()
+	tx, err := b.StartTx(mode)
 	if err != nil {
 		//Todo: error could not start transaction
 	}
 	err = f(tx)
-	//if err != nil -> rollback return
-	//if writable -> commit
-	//if ! writable -> rollback
+	if err != nil {
+		err := tx.RollbackTx()
+		if err != nil {
+			//Todo: Error
+		}
+	}
+	if tx.mode == MODE_READ_WRITE {
+		err := tx.CommitTx()
+		if err != nil {
+			//Todo: Error
+		}
+	} else if mode == MODE_READ {
+		err := tx.RollbackTx()
+		if err != nil {
+			//Todo: Error
+		}
+	} else {
+		err := tx.RollbackTx()
+		if err != nil {
+			//Todo: Error
+		}
+	}
 	return err
 }
 
@@ -173,6 +198,14 @@ func (b *Bucket) manager() error {
 		//invalidate invalid
 		//future geo location call backs
 	}
+	return nil
+}
+
+func (b *Bucket) needCompactLog() error {
+	return nil
+}
+
+func (b *Bucket) compactLog() error {
 	return nil
 }
 

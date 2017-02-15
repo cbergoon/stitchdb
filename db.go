@@ -2,17 +2,23 @@ package main
 
 import (
 	"bufio"
-	"errors"
+	//"errors"
 	"fmt"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 const (
 	BUCKET_CONFIG_FILE    string = "sbkt.conf"
 	BUCKET_FILE_EXTENSION string = ".stitch"
+)
+
+var (
+
 )
 
 type StitchDB struct {
@@ -64,7 +70,8 @@ func (db *StitchDB) readConfigFileBuckets() (map[string][]string, error) {
 	for _, line := range lines {
 		name, detail, err := parseStmtTypeName(line)
 		if err != nil {
-			//Todo: error
+			//Todo: Error
+			return nil, errors.New("error: failed to ...")
 		}
 		stmtMap[name] = detail
 	}
