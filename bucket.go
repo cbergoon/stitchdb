@@ -151,25 +151,17 @@ func (b *Bucket) handleTx(mode RWMode, f func(t *Tx) error) error {
 	err = f(tx)
 	if err != nil {
 		err := tx.RollbackTx()
-		if err != nil {
-			//Todo: Error
-		}
+		return err //May need to check
 	}
 	if tx.mode == MODE_READ_WRITE {
 		err := tx.CommitTx()
-		if err != nil {
-			//Todo: Error
-		}
+		return err //May need to check
 	} else if mode == MODE_READ {
 		err := tx.RollbackTx()
-		if err != nil {
-			//Todo: Error
-		}
+		return err //May need to check
 	} else {
 		err := tx.RollbackTx()
-		if err != nil {
-			//Todo: Error
-		}
+		return err //May need to check
 	}
 	return err
 }

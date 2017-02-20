@@ -2,23 +2,18 @@ package main
 
 import (
 	"bufio"
-	//"errors"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/pkg/errors"
+	//"github.com/pkg/errors"
 )
 
 const (
 	BUCKET_CONFIG_FILE    string = "sbkt.conf"
 	BUCKET_FILE_EXTENSION string = ".stitch"
-)
-
-var (
-
 )
 
 type StitchDB struct {
