@@ -36,13 +36,15 @@ func (t *Tx) CommitTx() error {
 	if !t.db.open {
 		//Todo: return error
 	}
+	if t.mode == MODE_READ {
+		//Todo: cannot commit read tx
+	}
 	//tx is write tx
 	if t.mode == MODE_READ_WRITE {
-
+		//Commit changes
+		//write set write delete
+		//sync file
 	}
-	//Commit changes
-	//write set write delete
-	//sync file
 	t.unlock()
 	return nil
 }
@@ -79,16 +81,37 @@ func (t *Tx) DescendIndex() error {
 	return nil
 }
 
-func (t *Tx) Get() error {
-	return nil
+func (t *Tx) Get(e *Entry) (*Entry, error) {
+	if !t.db.open || t.bkt == nil || !t.bkt.open {
+		//Todo: Error
+	}
+	res := t.bkt.get(e)
+	if res != nil {
+		if res.IsExpired() || res.IsInvalid() {
+			return nil, nil
+		}
+	}
+	return res, nil
 }
 
-func (t *Tx) Set() error {
-	return nil
+func (t *Tx) Set(e *Entry) (*Entry, error) {
+	if !t.db.open || t.bkt == nil || !t.bkt.open {
+		//Todo: Error
+	}
+	pres := t.bkt.insert(e)
+	if pres != nil {
+		//Populate rollback
+	}
+	return pres, nil
 }
 
-func (t *Tx) Delete() error {
-	return nil
+func (t *Tx) Delete(e *Entry) (*Entry, error) {
+	if !t.db.open || t.bkt == nil || !t.bkt.open {
+		//Todo: Error
+	}
+	dres := t.bkt.delete(e)
+	//populate roll back
+	return dres, nil
 }
 
 func (t *Tx) CreateIndex(index string, pattern string) error {

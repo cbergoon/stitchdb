@@ -145,9 +145,7 @@ func (b *Bucket) StartTx(mode RWMode) (*Tx, error) {
 
 func (b *Bucket) handleTx(mode RWMode, f func(t *Tx) error) error {
 	tx, err := b.StartTx(mode)
-	if err != nil {
-		//Todo: error could not start transaction
-	}
+	return err
 	err = f(tx)
 	if err != nil {
 		err := tx.RollbackTx()

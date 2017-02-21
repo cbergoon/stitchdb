@@ -27,3 +27,11 @@ func (e *Entry) Less(than btree.Item, itype interface{}) bool {
 	tl := than.(*Entry)
 	return e.k < tl.k
 }
+
+func (e *Entry) IsExpired() bool {
+	return false
+}
+
+func (e *Entry) IsInvalid() bool {
+	return false
+}
