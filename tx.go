@@ -1,6 +1,12 @@
 package main
 
-import "time"
+import (
+	"time"
+
+	"fmt"
+
+	"github.com/cbergoon/btree"
+)
 
 type RbCtx struct {
 	added   []*Entry
@@ -28,6 +34,7 @@ func NewTx(db *StitchDB, bkt *Bucket, mode RWMode) (*Tx, error) {
 
 func (t *Tx) RollbackTx() error {
 	//Rollback changes
+	fmt.Println("in rollback")
 	t.unlock()
 	return nil
 }
@@ -65,7 +72,12 @@ func (t *Tx) unlock() {
 	}
 }
 
-func (t *Tx) Ascend(f func()) error {
+func (t *Tx) Ascend(f func(e *Entry) bool) error {
+	i := func(i btree.Item) bool {
+		eItem := i.(*Entry)
+		return f(eItem)
+	}
+	t.bkt.data.Ascend(i)
 	return nil
 }
 
@@ -99,8 +111,9 @@ func (t *Tx) Set(e *Entry) (*Entry, error) {
 		//Todo: Error
 	}
 	pres := t.bkt.insert(e)
+	t.rbctx.added = append(t.rbctx.added, e)
 	if pres != nil {
-		//Populate rollback
+		t.rbctx.deleted = append(t.rbctx.deleted, pres)
 	}
 	return pres, nil
 }
@@ -110,7 +123,9 @@ func (t *Tx) Delete(e *Entry) (*Entry, error) {
 		//Todo: Error
 	}
 	dres := t.bkt.delete(e)
-	//populate roll back
+	if dres != nil {
+		t.rbctx.deleted = append(t.rbctx.deleted, dres)
+	}
 	return dres, nil
 }
 

@@ -12,13 +12,13 @@ func main() {
 
 	s.Open()
 
-	//opts, _ := NewBucketOptions(BTreeDegree(32))
-	//s.CreateBucket("test", opts)
-	//s.CreateBucket("test1", opts)
-	//s.CreateBucket("test2", opts)
-	//s.DropBucket("test1")
+	opts, _ := NewBucketOptions(BTreeDegree(32))
+	s.CreateBucket("test", opts)
+	s.CreateBucket("test1", opts)
+	s.CreateBucket("test2", opts)
+	s.DropBucket("test1")
 
-	fmt.Println(s)
+	//fmt.Println(s)
 
 	b, _ := s.getBucket("test")
 	for i := 0; i < 100; i++ {
@@ -26,8 +26,20 @@ func main() {
 		b.insert(e)
 	}
 
-	fmt.Println(b.get(&Entry{k: "k2"}))
+	fmt.Println("after insert")
 
-	//time.Sleep(time.Second * 4)
+	s.View("test", func(t *Tx) error {
+		t.Ascend(func(e *Entry) bool {
+			fmt.Println("Here in the Ascend: ", e)
+			return true
+		})
+		return nil
+	})
+
+	fmt.Println("after iterate")
+
+	//fmt.Println(b.get(&Entry{k: "k2"}))
+
+	time.Sleep(time.Second * 4)
 	s.Close()
 }

@@ -1,6 +1,11 @@
 package main
 
-import "github.com/cbergoon/btree"
+import (
+	"errors"
+	"time"
+
+	"github.com/cbergoon/btree"
+)
 
 type Entry struct {
 	k    string
@@ -11,7 +16,7 @@ type Entry struct {
 func NewEntry(k string, v string, options *EntryOptions) (*Entry, error) {
 	opts, err := NewEntryOptions()
 	if err != nil {
-		//Todo: Error
+		return nil, errors.New("error: failed to create entry options")
 	}
 	if options != nil {
 		opts = options
@@ -29,9 +34,21 @@ func (e *Entry) Less(than btree.Item, itype interface{}) bool {
 }
 
 func (e *Entry) IsExpired() bool {
+	if e.opts.doesExp {
+		if e.opts.expTime.After(time.Now()) {
+			return true
+		}
+		return false
+	}
 	return false
 }
 
 func (e *Entry) IsInvalid() bool {
+	if e.opts.doesInv {
+		if e.opts.invTime.After(time.Now()) {
+			return true
+		}
+		return false
+	}
 	return false
 }

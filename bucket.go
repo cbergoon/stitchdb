@@ -88,8 +88,8 @@ func (b *Bucket) get(key *Entry) *Entry {
 
 func (b *Bucket) insert(entry *Entry) *Entry {
 	var pentry *Entry = nil
-	fmt.Println(b)
-	fmt.Println(b.data)
+	//fmt.Println(b)
+	//fmt.Println(b.data)
 	if p := b.data.ReplaceOrInsert(entry); p != nil {
 		pentry = p.(*Entry)
 	}
@@ -145,7 +145,9 @@ func (b *Bucket) StartTx(mode RWMode) (*Tx, error) {
 
 func (b *Bucket) handleTx(mode RWMode, f func(t *Tx) error) error {
 	tx, err := b.StartTx(mode)
-	return err
+	if err != nil {
+		return err
+	}
 	err = f(tx)
 	if err != nil {
 		err := tx.RollbackTx()
