@@ -4,10 +4,11 @@ import (
 	"os"
 	"sync"
 	"time"
-
-	"fmt"
+	"bufio"
+	"io"
 
 	"github.com/cbergoon/btree"
+	"github.com/pkg/errors"
 )
 
 type Bucket struct {
@@ -44,17 +45,48 @@ func NewBucket(db *StitchDB, bucketOptions *BucketOptions, name string) (*Bucket
 	}, nil
 }
 
+func (b *Bucket) loadBucketFile() error {
+	lines := make([]string, 0)
+	r := bufio.NewReader(b.file)
+	var err error
+	var line []byte
+	for {
+		for i := 0; i < 128; i++ {
+			line, err = r.ReadBytes('\n')
+			if err == io.EOF && len(line) <= 0 {
+				break //Read is complete
+			} else if err != nil {
+				return errors.New("error: failed to read file")
+			}
+			lines = append(lines, string(line))
+		}
+		//Todo: Process to record bruh.
+		//Todo: Populate bucket, eviction and, invalidation
+		if err == io.EOF && len(line) <= 0 {
+			break //Read is complete
+		} else if err != nil {
+			return errors.New("error: failed to read file")
+		}
+	}
+	if err == io.EOF {
+		return nil
+	}
+	return err
+}
+
 func (b *Bucket) OpenBucket(file string) error {
 	b.lock(MODE_READ_WRITE)
 	defer b.unlock(MODE_READ_WRITE)
 	if b.db.config.persist {
 		var err error
-		fmt.Println(file)
 		b.file, err = os.OpenFile(file, os.O_CREATE|os.O_RDWR, 0666)
 		if err != nil {
-			//Todo: error
+			return errors.New("error: failed to open bucket file")
 		}
-		//Todo: Populate bucket, eviction and, invalidation
+		err = b.loadBucketFile()
+		if err != nil {
+			return errors.New("error failed to load from file")
+		}
 	}
 	return nil
 }
@@ -66,16 +98,19 @@ func (b *Bucket) Close() error {
 		if len(b.aofbuf) > 0 {
 			_, err := b.file.Write(b.aofbuf)
 			if err != nil {
-				//Todo: error
+				return errors.New("error: failed to write to bucket")
 			}
 		}
 		if err := b.file.Sync(); err != nil {
-			//Todo: error
+			return errors.New("error: failed to sync bucket file")
 		}
-		b.file.Close()
+		b.open = false
+		b.aofbuf, b.data, b.eviction, b.invalidation, b.indexes = nil, nil, nil, nil, nil
+		err := b.file.Close()
+		if err != nil {
+			return errors.New("error: failed to close bucket file")
+		}
 	}
-	b.open = false
-	b.aofbuf, b.data, b.eviction, b.invalidation, b.indexes = nil, nil, nil, nil, nil
 	return nil
 }
 
@@ -88,8 +123,6 @@ func (b *Bucket) get(key *Entry) *Entry {
 
 func (b *Bucket) insert(entry *Entry) *Entry {
 	var pentry *Entry = nil
-	//fmt.Println(b)
-	//fmt.Println(b.data)
 	if p := b.data.ReplaceOrInsert(entry); p != nil {
 		pentry = p.(*Entry)
 	}

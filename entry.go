@@ -52,3 +52,11 @@ func (e *Entry) IsInvalid() bool {
 	}
 	return false
 }
+
+func (e *Entry) EntryInsertStmt() []byte {
+	return nil
+}
+
+func (e *Entry) EntryDeleteStmt() []byte {
+	return nil
+}

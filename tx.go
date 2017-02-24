@@ -1,16 +1,14 @@
 package main
 
 import (
+	"errors"
 	"time"
-
-	"fmt"
 
 	"github.com/cbergoon/btree"
 )
 
 type RbCtx struct {
-	added   []*Entry
-	deleted []*Entry
+	changes map[string]*Entry
 }
 
 type Tx struct {
@@ -26,27 +24,34 @@ func NewTx(db *StitchDB, bkt *Bucket, mode RWMode) (*Tx, error) {
 		bkt:  bkt,
 		mode: mode,
 		rbctx: &RbCtx{
-			added:   make([]*Entry, 0, 100),
-			deleted: make([]*Entry, 0, 100),
+			//Holds the changes made during the transaction. Keys with a nil value were inserted
+			//during the transaction and should be deleted. Keys with a non-nil value were deleted
+			//durign the transaction and should be inserted.
+			changes: make(map[string]*Entry),
 		},
 	}, nil
 }
 
 func (t *Tx) RollbackTx() error {
-	//Rollback changes
-	fmt.Println("in rollback")
+	for key, entry := range t.rbctx.changes {
+		if entry == nil { //Entry was inserted during transaction; delete
+			t.bkt.delete(&Entry{k: key})
+		} else { //Entry was deleted or overwritten during transaction; insert
+			t.bkt.insert(entry)
+		}
+	}
+	//Todo: Indexes
 	t.unlock()
 	return nil
 }
 
 func (t *Tx) CommitTx() error {
 	if !t.db.open {
-		//Todo: return error
+		return errors.New("error: db is closed")
 	}
 	if t.mode == MODE_READ {
-		//Todo: cannot commit read tx
+		return errors.New("error: cannot commit read only transaction")
 	}
-	//tx is write tx
 	if t.mode == MODE_READ_WRITE {
 		//Commit changes
 		//write set write delete
@@ -81,21 +86,26 @@ func (t *Tx) Ascend(f func(e *Entry) bool) error {
 	return nil
 }
 
-func (t *Tx) Descend() error {
+func (t *Tx) Descend(f func(e *Entry) bool) error {
+	i := func(i btree.Item) bool {
+		eItem := i.(*Entry)
+		return f(eItem)
+	}
+	t.bkt.data.Descend(i)
 	return nil
 }
 
-func (t *Tx) AscendIndex() error {
+func (t *Tx) AscendIndex(index string, f func(e *Entry) bool) error {
 	return nil
 }
 
-func (t *Tx) DescendIndex() error {
+func (t *Tx) DescendIndex(index string, f func(e *Entry) bool) error {
 	return nil
 }
 
 func (t *Tx) Get(e *Entry) (*Entry, error) {
 	if !t.db.open || t.bkt == nil || !t.bkt.open {
-		//Todo: Error
+		return nil, errors.New("error: cannot get entry; db is in invalid state")
 	}
 	res := t.bkt.get(e)
 	if res != nil {
@@ -108,23 +118,20 @@ func (t *Tx) Get(e *Entry) (*Entry, error) {
 
 func (t *Tx) Set(e *Entry) (*Entry, error) {
 	if !t.db.open || t.bkt == nil || !t.bkt.open {
-		//Todo: Error
+		return nil, errors.New("error: cannot set entry; db is in invalid state")
 	}
 	pres := t.bkt.insert(e)
-	t.rbctx.added = append(t.rbctx.added, e)
-	if pres != nil {
-		t.rbctx.deleted = append(t.rbctx.deleted, pres)
-	}
+	t.rbctx.changes[e.k] = pres
 	return pres, nil
 }
 
 func (t *Tx) Delete(e *Entry) (*Entry, error) {
 	if !t.db.open || t.bkt == nil || !t.bkt.open {
-		//Todo: Error
+		return nil, errors.New("error: cannot delete entry; db is in invalid state")
 	}
 	dres := t.bkt.delete(e)
 	if dres != nil {
-		t.rbctx.deleted = append(t.rbctx.deleted, dres)
+		t.rbctx.changes[e.k] = dres
 	}
 	return dres, nil
 }
