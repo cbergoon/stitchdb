@@ -4,13 +4,18 @@ import (
 	"errors"
 	"time"
 
+	"strconv"
+
 	"github.com/cbergoon/btree"
 )
 
+//Todo: Implement Less function
+
 type Entry struct {
-	k    string
-	v    string
-	opts *EntryOptions
+	k       string
+	v       string
+	opts    *EntryOptions
+	invalid bool
 }
 
 func NewEntry(k string, v string, options *EntryOptions) (*Entry, error) {
@@ -44,6 +49,9 @@ func (e *Entry) IsExpired() bool {
 }
 
 func (e *Entry) IsInvalid() bool {
+	if e.invalid {
+		return true
+	}
 	if e.opts.doesInv {
 		if e.opts.invTime.After(time.Now()) {
 			return true
@@ -54,9 +62,51 @@ func (e *Entry) IsInvalid() bool {
 }
 
 func (e *Entry) EntryInsertStmt() []byte {
-	return nil
+	var buf, cbuf []byte
+
+	cbuf = append(cbuf, "INSERT"...)
+	cbuf = append(cbuf, '~')
+	cbuf = append(cbuf, e.k...)
+	cbuf = append(cbuf, '~')
+	cbuf = append(cbuf, e.v...)
+	cbuf = append(cbuf, '~')
+	cbuf = append(cbuf, e.opts.entryOptionsCreateStmt()...)
+	cbuf = append(cbuf, '\n')
+
+	buf = append(buf, strconv.Itoa(len(cbuf))...)
+	buf = append(buf, '\n')
+	buf = append(buf, cbuf...)
+
+	return buf
 }
 
 func (e *Entry) EntryDeleteStmt() []byte {
-	return nil
+	var buf, cbuf []byte
+
+	cbuf = append(cbuf, "DELETE"...)
+	cbuf = append(cbuf, '~')
+	cbuf = append(cbuf, e.k...)
+	cbuf = append(cbuf, '~')
+	cbuf = append(cbuf, e.v...)
+	cbuf = append(cbuf, '~')
+	cbuf = append(cbuf, e.opts.entryOptionsCreateStmt()...)
+	cbuf = append(cbuf, '\n')
+
+	buf = append(buf, strconv.Itoa(len(cbuf))...)
+	buf = append(buf, '\n')
+	buf = append(buf, cbuf...)
+
+	return buf
+}
+
+func NewEntryFromStmt(stmtParts []string) (*Entry, error) {
+	opts, err := NewEntryOptionsFromStmt(stmtParts[3:])
+	if err != nil {
+		return nil, errors.New("error: failed to parse entry options")
+	}
+	entry, err := NewEntry(stmtParts[1], stmtParts[2], opts)
+	if err != nil {
+		return nil, errors.New("error: failed to create entry")
+	}
+	return entry, nil
 }

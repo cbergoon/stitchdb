@@ -271,7 +271,6 @@ func (db *StitchDB) CreateBucket(name string, options *BucketOptions) error {
 	if bkt != nil || err == nil {
 		return errors.New("error: bucket already exists")
 	}
-	fmt.Println("here")
 	bktName := strings.TrimSpace(name)
 	bktFilePath := db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION)
 	bucket, err := NewBucket(db, options, bktName)

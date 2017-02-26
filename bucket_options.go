@@ -12,8 +12,6 @@ type BucketOptions struct {
 	time     bool
 }
 
-//Implement Bucket options Here
-
 func System(b *BucketOptions) error {
 	b.system = true
 	return nil
@@ -95,13 +93,6 @@ func NewBucketOptionsFromStmt(stmt []string) (*BucketOptions, error) {
 		time:     time,
 	}
 	return opts, nil
-}
-
-func boolToInt(b bool) int {
-	if b {
-		return 1
-	}
-	return 0
 }
 
 //On eviction Function Move to Item

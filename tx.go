@@ -7,8 +7,12 @@ import (
 	"github.com/cbergoon/btree"
 )
 
+//Todo: Finish Tx Operations
+//Todo: Implement Support for Indexes
+
 type RbCtx struct {
-	changes map[string]*Entry
+	backward map[string]*Entry
+	forward  map[string]*Entry
 }
 
 type Tx struct {
@@ -24,16 +28,20 @@ func NewTx(db *StitchDB, bkt *Bucket, mode RWMode) (*Tx, error) {
 		bkt:  bkt,
 		mode: mode,
 		rbctx: &RbCtx{
-			//Holds the changes made during the transaction. Keys with a nil value were inserted
+			//Holds the backward changes made during the transaction. Keys with a nil value were inserted
 			//during the transaction and should be deleted. Keys with a non-nil value were deleted
-			//durign the transaction and should be inserted.
-			changes: make(map[string]*Entry),
+			//during the transaction and should be inserted.
+			backward: make(map[string]*Entry),
+			//Holds the forward changes made during the transaction. Keys with a nil value were deleted during
+			//the transaction and should be deleted. Keys with a non-nil value were inserted during the transaction
+			//and should be inserted.
+			forward: make(map[string]*Entry),
 		},
 	}, nil
 }
 
 func (t *Tx) RollbackTx() error {
-	for key, entry := range t.rbctx.changes {
+	for key, entry := range t.rbctx.backward {
 		if entry == nil { //Entry was inserted during transaction; delete
 			t.bkt.delete(&Entry{k: key})
 		} else { //Entry was deleted or overwritten during transaction; insert
@@ -53,9 +61,14 @@ func (t *Tx) CommitTx() error {
 		return errors.New("error: cannot commit read only transaction")
 	}
 	if t.mode == MODE_READ_WRITE {
-		//Commit changes
-		//write set write delete
-		//sync file
+		for key, entry := range t.rbctx.forward {
+			if entry == nil { //Entry was deleted or overwritten during transaction; delete/overwrite
+				t.bkt.WriteDeleteEntry(&Entry{k: key})
+			} else { //Entry was inserted during transaction; insert
+				t.bkt.WriteInsertEntry(entry)
+			}
+		}
+		t.bkt.WriteAOFBuf()
 	}
 	t.unlock()
 	return nil
@@ -121,7 +134,8 @@ func (t *Tx) Set(e *Entry) (*Entry, error) {
 		return nil, errors.New("error: cannot set entry; db is in invalid state")
 	}
 	pres := t.bkt.insert(e)
-	t.rbctx.changes[e.k] = pres
+	t.rbctx.backward[e.k] = pres
+	t.rbctx.forward[e.k] = e
 	return pres, nil
 }
 
@@ -131,7 +145,8 @@ func (t *Tx) Delete(e *Entry) (*Entry, error) {
 	}
 	dres := t.bkt.delete(e)
 	if dres != nil {
-		t.rbctx.changes[e.k] = dres
+		t.rbctx.backward[e.k] = dres
+		t.rbctx.forward[e.k] = nil
 	}
 	return dres, nil
 }
