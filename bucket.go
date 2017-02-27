@@ -13,10 +13,7 @@ import (
 	"github.com/cbergoon/btree"
 )
 
-//Todo: Implement Writes
 //Todo: Implement Indexes
-//Todo: Implement Process in Load
-//Todo: Finish Start Tx and Handle Tx
 //Todo: juju/errors
 //Todo: Finish Manager; invalidate, expire, callbacks
 //Todo: Implement Log Compaction

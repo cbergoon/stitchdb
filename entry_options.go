@@ -9,8 +9,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-//Todo: Implement Entry Options Statements
-
 type EntryOptions struct {
 	doesExp bool
 	doesInv bool

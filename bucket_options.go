@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"strconv"
 )
 
@@ -67,23 +68,23 @@ func (b *BucketOptions) bucketOptionsCreateStmt() []byte {
 func NewBucketOptionsFromStmt(stmt []string) (*BucketOptions, error) {
 	btdeg, err := strconv.ParseInt(stmt[1], 10, 64)
 	if err != nil {
-		//Todo: error...
+		return nil, errors.New("error: failed to parse bucket options")
 	}
 	system, err := strconv.ParseBool(stmt[2])
 	if err != nil {
-		//Todo: error...
+		return nil, errors.New("error: failed to parse bucket options")
 	}
 	geo, err := strconv.ParseBool(stmt[3])
 	if err != nil {
-		//Todo: error...
+		return nil, errors.New("error: failed to parse bucket options")
 	}
 	georincl, err := strconv.ParseBool(stmt[4])
 	if err != nil {
-		//Todo: error...
+		return nil, errors.New("error: failed to parse bucket options")
 	}
 	time, err := strconv.ParseBool(stmt[5])
 	if err != nil {
-		//Todo: error...
+		return nil, errors.New("error: failed to parse bucket options")
 	}
 	opts := &BucketOptions{
 		btdeg:    int(btdeg),
