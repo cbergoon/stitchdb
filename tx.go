@@ -166,9 +166,12 @@ func (t *Tx) CreateIndex(pattern string) error {
 	if !t.db.open || t.bkt == nil || !t.bkt.open {
 		return errors.New("error: cannot create index; db is in invalid state")
 	}
-	//Todo: Check exists
+	curr, ok := t.bkt.indexes[pattern]
+	if ok && curr != nil {
+		return errors.New("error: cannot create index; index already exists")
+	}
 	//Create Index
-	index, err := NewIndex(pattern)
+	index, err := NewIndex(pattern, t.bkt)
 	if err != nil {
 		return errors.New("error: could not create index")
 	}
@@ -176,7 +179,7 @@ func (t *Tx) CreateIndex(pattern string) error {
 	//Add to backward indexes with nil value
 	t.rbctx.backwardIndex[pattern] = nil
 	//Rebuild Index
-	t.bkt.indexes[pattern].build()
+	t.bkt.indexes[pattern].build(t.bkt)
 	return nil
 }
 
@@ -186,7 +189,7 @@ func (t *Tx) DropIndex(pattern string) error {
 	}
 	//Add to backward indexes with pointer to index value
 	index, ok := t.bkt.indexes[pattern]
-	if !ok {
+	if !ok || index == nil {
 		return errors.New("error: cannot drop; index does not exist")
 	}
 	t.rbctx.backwardIndex[pattern] = index

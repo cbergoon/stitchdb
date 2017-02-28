@@ -37,9 +37,9 @@ func (e *Entry) Less(than btree.Item, itype interface{}) bool {
 	tl := than.(*Entry)
 	switch i := itype.(type) {
 	case *eItype:
-		return tl.ExpiresAt().After(e.ExpiresAt()) //Todo: May need to catch edge case
+		return e.ExpiresAt().Before(tl.ExpiresAt()) //Todo: May need to catch edge case
 	case *iItype:
-		return tl.InvalidatesAt().After(e.InvalidatesAt()) //Todo: May need to catch edge case
+		return e.InvalidatesAt().Before(tl.InvalidatesAt()) //Todo: May need to catch edge case
 	case *Index:
 		return i.less(e, tl)
 	default:
