@@ -11,8 +11,9 @@ import (
 //Todo: Implement Support for Indexes
 
 type RbCtx struct {
-	backward map[string]*Entry
-	forward  map[string]*Entry
+	backward      map[string]*Entry
+	forward       map[string]*Entry
+	backwardIndex map[string]*Index
 }
 
 type Tx struct {
@@ -32,6 +33,10 @@ func NewTx(db *StitchDB, bkt *Bucket, mode RWMode) (*Tx, error) {
 			//during the transaction and should be deleted. Keys with a non-nil value were deleted
 			//during the transaction and should be inserted.
 			backward: make(map[string]*Entry),
+			//Holds the backward index changes made during the transaction. Keys with a nil value were created
+			//and need to be deleted on rollback. Keys with a non-nil value were dropped and need to be replaced
+			//with the value on rollback.
+			backwardIndex: make(map[string]*Index),
 			//Holds the forward changes made during the transaction. Keys with a nil value were deleted during
 			//the transaction and should be deleted. Keys with a non-nil value were inserted during the transaction
 			//and should be inserted.
@@ -44,11 +49,16 @@ func (t *Tx) RollbackTx() error {
 	for key, entry := range t.rbctx.backward {
 		if entry == nil { //Entry was inserted during transaction; delete
 			t.bkt.delete(&Entry{k: key})
+			for _, ind := range t.bkt.indexes {
+				ind.t.Delete(&Entry{k: key})
+			}
 		} else { //Entry was deleted or overwritten during transaction; insert
 			t.bkt.insert(entry)
+			for _, ind := range t.bkt.indexes {
+				ind.t.ReplaceOrInsert(entry)
+			}
 		}
 	}
-	//Todo: Indexes
 	t.unlock()
 	return nil
 }
@@ -109,6 +119,7 @@ func (t *Tx) Descend(f func(e *Entry) bool) error {
 }
 
 func (t *Tx) AscendIndex(index string, f func(e *Entry) bool) error {
+
 	return nil
 }
 
@@ -151,16 +162,46 @@ func (t *Tx) Delete(e *Entry) (*Entry, error) {
 	return dres, nil
 }
 
-func (t *Tx) CreateIndex(index string, pattern string) error {
+func (t *Tx) CreateIndex(pattern string) error {
+	if !t.db.open || t.bkt == nil || !t.bkt.open {
+		return errors.New("error: cannot create index; db is in invalid state")
+	}
+	//Todo: Check exists
+	//Create Index
+	index, err := NewIndex(pattern)
+	if err != nil {
+		return errors.New("error: could not create index")
+	}
+	t.bkt.indexes[pattern] = index
+	//Add to backward indexes with nil value
+	t.rbctx.backwardIndex[pattern] = nil
+	//Rebuild Index
+	t.bkt.indexes[pattern].build()
 	return nil
 }
 
-func (t *Tx) DropIndex(index string) error {
+func (t *Tx) DropIndex(pattern string) error {
+	if !t.db.open || t.bkt == nil || !t.bkt.open {
+		return errors.New("error: cannot drop index; db is in invalid state")
+	}
+	//Add to backward indexes with pointer to index value
+	index, ok := t.bkt.indexes[pattern]
+	if !ok {
+		return errors.New("error: cannot drop; index does not exist")
+	}
+	t.rbctx.backwardIndex[pattern] = index
+	//Set map pointer to nil, Delete entry from index map
+	t.bkt.indexes[pattern] = nil
+	delete(t.bkt.indexes, pattern)
 	return nil
 }
 
 func (t *Tx) Indexes() ([]string, error) {
-	return nil, nil
+	var idxs []string
+	for i := range t.bkt.indexes {
+		idxs = append(idxs, i)
+	}
+	return idxs, nil
 }
 
 func (t *Tx) Min() (*Entry, error) {

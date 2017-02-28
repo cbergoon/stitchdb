@@ -35,6 +35,16 @@ func NewEntry(k string, v string, options *EntryOptions) (*Entry, error) {
 
 func (e *Entry) Less(than btree.Item, itype interface{}) bool {
 	tl := than.(*Entry)
+	switch i := itype.(type) {
+	case *eItype:
+		return tl.ExpiresAt().After(e.ExpiresAt()) //Todo: May need to catch edge case
+	case *iItype:
+		return tl.InvalidatesAt().After(e.InvalidatesAt()) //Todo: May need to catch edge case
+	case *Index:
+		return i.less(e, tl)
+	default:
+		return e.k < tl.k
+	}
 	return e.k < tl.k
 }
 
@@ -59,6 +69,14 @@ func (e *Entry) IsInvalid() bool {
 		return false
 	}
 	return false
+}
+
+func (e *Entry) ExpiresAt() time.Time {
+	return e.opts.expTime
+}
+
+func (e *Entry) InvalidatesAt() time.Time {
+	return e.opts.invTime
 }
 
 func (e *Entry) EntryInsertStmt() []byte {

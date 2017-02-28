@@ -114,6 +114,12 @@ func (b *Bucket) loadBucketFile() error {
 			return errors.New("error: failed to read file")
 		}
 	}
+
+	//Rebuild Indexes
+	for _, ind := range b.indexes {
+		ind.rebuild()
+	}
+
 	if err == io.EOF {
 		return nil
 	}
@@ -222,7 +228,10 @@ func (b *Bucket) insert(entry *Entry) *Entry {
 		if pentry.opts.doesInv {
 			b.invalidation.Delete(pentry)
 		}
-		//Todo: Iterate through indexes delete pentry
+		//Iterate through indexes delete pentry
+		for _, ind := range b.indexes {
+			ind.t.Delete(pentry)
+		}
 	}
 	if entry.opts.doesExp {
 		b.eviction.ReplaceOrInsert(entry)
@@ -230,7 +239,10 @@ func (b *Bucket) insert(entry *Entry) *Entry {
 	if entry.opts.doesInv {
 		b.invalidation.ReplaceOrInsert(entry)
 	}
-	//Todo: Iterate through indexes insert pentry
+	//Iterate through indexes insert entry
+	for _, ind := range b.indexes {
+		ind.t.ReplaceOrInsert(pentry)
+	}
 	return pentry
 }
 
@@ -246,7 +258,10 @@ func (b *Bucket) delete(key *Entry) *Entry {
 		if pentry.opts.doesInv {
 			b.invalidation.Delete(pentry)
 		}
-		//Todo: Iterate through indexes delete pentry
+		//Iterate through indexes delete pentry
+		for _, ind := range b.indexes {
+			ind.t.Delete(pentry)
+		}
 	}
 	return nil
 }
