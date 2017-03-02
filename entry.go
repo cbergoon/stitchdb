@@ -1,12 +1,11 @@
 package main
 
 import (
-	"errors"
+	"strconv"
 	"time"
 
-	"strconv"
-
 	"github.com/cbergoon/btree"
+	"github.com/juju/errors"
 )
 
 //Todo: Implement Less function
@@ -21,7 +20,7 @@ type Entry struct {
 func NewEntry(k string, v string, options *EntryOptions) (*Entry, error) {
 	opts, err := NewEntryOptions()
 	if err != nil {
-		return nil, errors.New("error: failed to create entry options")
+		return nil, errors.Annotate(err, "error: entry: failed to create entry options")
 	}
 	if options != nil {
 		opts = options
@@ -120,11 +119,11 @@ func (e *Entry) EntryDeleteStmt() []byte {
 func NewEntryFromStmt(stmtParts []string) (*Entry, error) {
 	opts, err := NewEntryOptionsFromStmt(stmtParts[3:])
 	if err != nil {
-		return nil, errors.New("error: failed to parse entry options")
+		return nil, errors.Annotate(err, "error: entry: failed to parse entry options")
 	}
 	entry, err := NewEntry(stmtParts[1], stmtParts[2], opts)
 	if err != nil {
-		return nil, errors.New("error: failed to create entry")
+		return nil, errors.Annotate(err, "error: entry: failed to create entry")
 	}
 	return entry, nil
 }

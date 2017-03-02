@@ -2,12 +2,13 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/juju/errors"
 )
 
 const (
@@ -32,11 +33,11 @@ func NewStitchDB(config *Config) (*StitchDB, error) {
 	}
 	sysbktopts, err := NewBucketOptions(BTreeDegree(32)) //Todo: set appropriate bucket options for sys
 	if err != nil {
-		return nil, errors.New("error: failed to create system bucket options")
+		return nil, errors.Annotate(err, "error: db: failed to create system bucket options")
 	}
 	sysbkt, err := NewBucket(stitch, sysbktopts, "_sys")
 	if err != nil {
-		return nil, errors.New("error: failed to create system bucket")
+		return nil, errors.Annotate(err, "error: db: failed to create system bucket")
 	}
 	stitch.system = sysbkt
 	return stitch, nil
@@ -62,7 +63,7 @@ func (db *StitchDB) readConfigFileBuckets() (map[string][]string, error) {
 	for _, line := range lines {
 		name, detail, err := parseStmtTypeName(line)
 		if err != nil {
-			return nil, errors.New("error: failed to parse statement")
+			return nil, errors.Annotate(err, "error: db: failed to parse bucket statement")
 		}
 		stmtMap[name] = detail
 	}
@@ -76,7 +77,7 @@ func parseStmtTypeName(stmt string) (string, []string, error) {
 	} else if len(parts) == 2 && parts[0] == "DROP" {
 		return strings.TrimSpace(parts[1]), nil, nil
 	} else {
-		return "", nil, errors.New("error: invalid or unrecognized statement")
+		return "", nil, errors.New("error: db: invalid or unrecognized statement")
 	}
 }
 
@@ -90,17 +91,17 @@ func (db *StitchDB) Open() error {
 	if db.config.persist {
 		err := os.MkdirAll(db.config.dirPath, os.ModePerm)
 		if err != nil {
-			return errors.New("error: failed to create stitch directory")
+			return errors.Annotate(err, "error: db: failed to create stitch directory")
 		}
 		bktStmts, err := db.readConfigFileBuckets()
 		if err != nil {
-			return errors.New("error: failed to read file")
+			return errors.Annotate(err, "error: db: failed to read stitch file")
 		}
 		for bktName, bktStmtParts := range bktStmts {
 			if bktStmtParts != nil && len(bktStmtParts) > 0 {
 				bucket, err := NewBucketFromStmt(db, bktStmts[bktName])
 				if err != nil {
-					return errors.New("error: failed to create bucket from statement")
+					return errors.Annotate(err, "error: db: failed to create bucket from statement")
 				}
 				db.buckets[bktName] = bucket
 				db.buckets[bktName].OpenBucket(db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION))
@@ -116,12 +117,12 @@ func (db *StitchDB) Close() error {
 	db.lock(MODE_READ_WRITE)
 	defer db.unlock(MODE_READ_WRITE)
 	if !db.open {
-		return errors.New("error: db is closed")
+		return errors.New("error: db: db is closed")
 	}
 	for key := range db.buckets {
 		err := db.buckets[key].Close()
 		if err != nil {
-			return errors.New("error: failed to close bucket")
+			return errors.Annotate(err, "error: db: failed to close bucket")
 		}
 		db.buckets[key] = nil
 	}
@@ -129,11 +130,11 @@ func (db *StitchDB) Close() error {
 	if db.config.persist && db.bktcfgf != nil {
 		err := db.bktcfgf.Sync()
 		if err != nil {
-			return errors.New("errors: failed to sync bucket config file")
+			return errors.Annotate(err, "errors: db: failed to sync bucket config file")
 		}
 		err = db.bktcfgf.Close()
 		if err != nil {
-			return errors.New("errors: failed to close bucket config file")
+			return errors.Annotate(err, "errors: db: failed to close bucket config file")
 		}
 	}
 	db.open = false
@@ -159,12 +160,12 @@ func (db *StitchDB) runManager() error {
 					//Clear file
 					err := db.bktcfgf.Truncate(0)
 					if err != nil {
-						fmt.Println(errors.New("error: failed to truncate bucket config file"))
+						fmt.Println(errors.ErrorStack(errors.Annotate(err, "error: db: failed to truncate bucket config file")))
 						continue
 					}
 					_, err = db.bktcfgf.Seek(0, 0)
 					if err != nil {
-						fmt.Println(errors.New("error: failed to seek to bucket config file"))
+						fmt.Println(errors.ErrorStack(errors.Annotate(err, "error: db: failed to seek to bucket config file")))
 						continue
 					}
 					//Rewrite file
@@ -172,7 +173,7 @@ func (db *StitchDB) runManager() error {
 						stmt := db.buckets[key].bucketCreateStmt()
 						_, err := db.bktcfgf.Write(stmt)
 						if err != nil {
-							fmt.Println(errors.New("error: failed to write bucket config file"))
+							fmt.Println(errors.ErrorStack(errors.Annotate(err, "error: db: failed to write bucket config file")))
 							continue
 						}
 					}
@@ -180,7 +181,7 @@ func (db *StitchDB) runManager() error {
 					if db.config.syncFreq == EACH {
 						err := db.bktcfgf.Sync()
 						if err != nil {
-							fmt.Println(errors.New("error: failed to sync bucket config file"))
+							fmt.Println(errors.ErrorStack(errors.Annotate(err, "error: db: failed to sync bucket config file")))
 							continue
 						}
 					}
@@ -188,7 +189,7 @@ func (db *StitchDB) runManager() error {
 				if db.config.syncFreq == MNGFREQ {
 					err := db.bktcfgf.Sync()
 					if err != nil {
-						fmt.Println(errors.New("error: failed to sync bucket config file"))
+						fmt.Println(errors.ErrorStack(errors.Annotate(err, "error: db: failed to sync bucket config file")))
 						continue
 					}
 				}
@@ -227,7 +228,7 @@ func (db *StitchDB) getBucket(name string) (*Bucket, error) {
 		b, ok = db.buckets[bktName]
 	}
 	if !ok {
-		return nil, errors.New("error: bucket does not exist")
+		return nil, errors.New("error: db: invalid bucket")
 	}
 	return b, nil
 }
@@ -236,11 +237,14 @@ func (db *StitchDB) View(bucket string, f func(t *Tx) error) error {
 	db.lock(MODE_READ)
 	defer db.unlock(MODE_READ)
 	if !db.open {
-		return errors.New("error db is closed")
+		return errors.New("error: db: db is closed")
 	}
 	b, err := db.getBucket(bucket)
-	if b == nil || err != nil {
-		return errors.New("error: bucket does not exist")
+	if err != nil {
+		return errors.Annotate(err, "error: db: invalid bucket")
+	}
+	if b == nil {
+		return errors.New("error: db: invalid bucket")
 	}
 	err = b.handleTx(MODE_READ, f)
 	return err
@@ -250,11 +254,14 @@ func (db *StitchDB) Update(bucket string, f func(t *Tx) error) error {
 	db.lock(MODE_READ)
 	defer db.unlock(MODE_READ)
 	if !db.open {
-		return errors.New("error: db is closed")
+		return errors.New("error: db: db is closed")
 	}
 	b, err := db.getBucket(bucket)
-	if b == nil || err != nil {
-		return errors.New("error: invalid bucket")
+	if err != nil {
+		return errors.Annotate(err, "error: db: invalid bucket")
+	}
+	if b == nil {
+		return errors.New("error: db: invalid bucket")
 	}
 	err = b.handleTx(MODE_READ_WRITE, f)
 	return err
@@ -264,37 +271,40 @@ func (db *StitchDB) CreateBucket(name string, options *BucketOptions) error {
 	db.lock(MODE_READ_WRITE)
 	defer db.unlock(MODE_READ_WRITE)
 	if !db.open {
-		return errors.New("error: db is closed")
+		return errors.New("error: db: db is closed")
 	}
 
 	bkt, err := db.getBucket(name)
-	if bkt != nil || err == nil {
-		return errors.New("error: bucket already exists")
+	if err == nil {
+		return errors.Annotate(err, "error: db: bucket already exists")
+	}
+	if bkt != nil {
+		return errors.New("error: db: bucket already exists")
 	}
 	bktName := strings.TrimSpace(name)
 	bktFilePath := db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION)
 	bucket, err := NewBucket(db, options, bktName)
 	if err != nil {
-		return errors.New("error: failed to create bucket")
+		return errors.Annotate(err, "error: db: failed to create bucket")
 	}
 
 	db.buckets[bktName] = bucket
 	err = db.buckets[bktName].OpenBucket(bktFilePath)
 	if err != nil {
-		return errors.New("error: failed to open bucket")
+		return errors.Annotate(err, "error: db: failed to open bucket")
 	}
 
 	if db.config.persist && db.bktcfgf != nil {
 		stmt := bucket.bucketCreateStmt()
 		_, err := db.bktcfgf.Write(stmt)
 		if err != nil {
-			return errors.New("errors: failed to write to bucket config file")
+			return errors.Annotate(err, "errors: db: failed to write to bucket config file")
 		}
 		db.bktcfgfrc++
 		if db.config.syncFreq == EACH {
 			err := db.bktcfgf.Sync()
 			if err != nil {
-				return errors.New("errors: failed to write to bucket config file")
+				return errors.Annotate(err, "errors: db: failed to write bucket config file")
 			}
 		}
 	}
@@ -307,12 +317,12 @@ func (db *StitchDB) DropBucket(name string) error {
 	db.lock(MODE_READ_WRITE)
 	defer db.unlock(MODE_READ_WRITE)
 	if !db.open {
-		return errors.New("error: db is closed")
+		return errors.New("error: db: db is closed")
 	}
 	bktName := strings.TrimSpace(name)
 	bucket, err := db.getBucket(bktName)
 	if err != nil {
-		return errors.New("error: invalid bucket")
+		return errors.Annotate(err, "error: db: invalid bucket")
 	}
 	stmt := bucket.bucketDropStmt()
 	bucket.Close()
@@ -322,13 +332,13 @@ func (db *StitchDB) DropBucket(name string) error {
 	if db.config.persist && db.bktcfgf != nil {
 		_, err := db.bktcfgf.Write(stmt)
 		if err != nil {
-			return errors.New("errors: failed to write to bucket config file")
+			return errors.Annotate(err, "errors: db: failed to write bucket config file")
 		}
 		db.bktcfgfrc++
 		if db.config.syncFreq == EACH {
 			err := db.bktcfgf.Sync()
 			if err != nil {
-				return errors.New("errors: failed to write to bucket config file")
+				return errors.Annotate(err, "errors: db: failed to sync bucket config file")
 			}
 		}
 	}

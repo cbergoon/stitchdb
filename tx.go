@@ -1,10 +1,10 @@
 package main
 
 import (
-	"errors"
-	"time"
+	"strings"
 
 	"github.com/cbergoon/btree"
+	"github.com/juju/errors"
 )
 
 //Todo: Finish Tx Operations
@@ -65,10 +65,10 @@ func (t *Tx) RollbackTx() error {
 
 func (t *Tx) CommitTx() error {
 	if !t.db.open {
-		return errors.New("error: db is closed")
+		return errors.New("error: tx: db is closed")
 	}
 	if t.mode == MODE_READ {
-		return errors.New("error: cannot commit read only transaction")
+		return errors.New("error: tx: cannot commit read only transaction")
 	}
 	if t.mode == MODE_READ_WRITE {
 		for key, entry := range t.rbctx.forward {
@@ -100,36 +100,114 @@ func (t *Tx) unlock() {
 	}
 }
 
-func (t *Tx) Ascend(f func(e *Entry) bool) error {
+func (t *Tx) Ascend(index string, f func(e *Entry) bool) error {
 	i := func(i btree.Item) bool {
 		eItem := i.(*Entry)
 		return f(eItem)
 	}
-	t.bkt.data.Ascend(i)
+	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
+		t.bkt.indexes[index].t.Ascend(i)
+	} else {
+		t.bkt.data.Ascend(i)
+	}
 	return nil
 }
 
-func (t *Tx) Descend(f func(e *Entry) bool) error {
+func (t *Tx) AscendGreaterOrEqual(index string, pivot *Entry, f func(e *Entry) bool) error {
 	i := func(i btree.Item) bool {
 		eItem := i.(*Entry)
 		return f(eItem)
+	}
+	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
+		t.bkt.indexes[index].t.AscendGreaterOrEqual(pivot, i)
+	} else {
+		t.bkt.data.AscendGreaterOrEqual(pivot, i)
+	}
+	return nil
+}
+
+func (t *Tx) AscendLessThan(index string, pivot *Entry, f func(e *Entry) bool) error {
+	i := func(i btree.Item) bool {
+		eItem := i.(*Entry)
+		return f(eItem)
+	}
+	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
+		t.bkt.indexes[index].t.AscendLessThan(pivot, i)
+	} else {
+		t.bkt.data.AscendLessThan(pivot, i)
+	}
+	return nil
+}
+
+func (t *Tx) AscendRange(index string, greaterOrEqual *Entry, lessThan *Entry, f func(e *Entry) bool) error {
+	i := func(i btree.Item) bool {
+		eItem := i.(*Entry)
+		return f(eItem)
+	}
+	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
+		t.bkt.indexes[index].t.AscendRange(greaterOrEqual, lessThan, i)
+	} else {
+		t.bkt.data.AscendRange(greaterOrEqual, lessThan, i)
+	}
+	return nil
+}
+
+func (t *Tx) Descend(index string, f func(e *Entry) bool) error {
+	i := func(i btree.Item) bool {
+		eItem := i.(*Entry)
+		return f(eItem)
+	}
+	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
+		t.bkt.indexes[index].t.Descend(i)
+	} else {
+		t.bkt.data.Descend(i)
 	}
 	t.bkt.data.Descend(i)
 	return nil
 }
 
-func (t *Tx) AscendIndex(index string, f func(e *Entry) bool) error {
-
+func (t *Tx) DescendGreaterThan(index string, pivot *Entry, f func(e *Entry) bool) error {
+	i := func(i btree.Item) bool {
+		eItem := i.(*Entry)
+		return f(eItem)
+	}
+	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
+		t.bkt.indexes[index].t.DescendGreaterThan(pivot, i)
+	} else {
+		t.bkt.data.DescendGreaterThan(pivot, i)
+	}
 	return nil
 }
 
-func (t *Tx) DescendIndex(index string, f func(e *Entry) bool) error {
+func (t *Tx) DescendLessOrEqual(index string, pivot *Entry, f func(e *Entry) bool) error {
+	i := func(i btree.Item) bool {
+		eItem := i.(*Entry)
+		return f(eItem)
+	}
+	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
+		t.bkt.indexes[index].t.DescendLessOrEqual(pivot, i)
+	} else {
+		t.bkt.data.DescendLessOrEqual(pivot, i)
+	}
+	return nil
+}
+
+func (t *Tx) DescendRange(index string, lessOrEqual *Entry, greaterThan *Entry, f func(e *Entry) bool) error {
+	i := func(i btree.Item) bool {
+		eItem := i.(*Entry)
+		return f(eItem)
+	}
+	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
+		t.bkt.indexes[index].t.DescendRange(lessOrEqual, greaterThan, i)
+	} else {
+		t.bkt.data.DescendRange(lessOrEqual, greaterThan, i)
+	}
 	return nil
 }
 
 func (t *Tx) Get(e *Entry) (*Entry, error) {
 	if !t.db.open || t.bkt == nil || !t.bkt.open {
-		return nil, errors.New("error: cannot get entry; db is in invalid state")
+		return nil, errors.New("error: tx: cannot get entry; db is in invalid state")
 	}
 	res := t.bkt.get(e)
 	if res != nil {
@@ -142,7 +220,7 @@ func (t *Tx) Get(e *Entry) (*Entry, error) {
 
 func (t *Tx) Set(e *Entry) (*Entry, error) {
 	if !t.db.open || t.bkt == nil || !t.bkt.open {
-		return nil, errors.New("error: cannot set entry; db is in invalid state")
+		return nil, errors.New("error: tx: cannot set entry; db is in invalid state")
 	}
 	pres := t.bkt.insert(e)
 	t.rbctx.backward[e.k] = pres
@@ -152,7 +230,7 @@ func (t *Tx) Set(e *Entry) (*Entry, error) {
 
 func (t *Tx) Delete(e *Entry) (*Entry, error) {
 	if !t.db.open || t.bkt == nil || !t.bkt.open {
-		return nil, errors.New("error: cannot delete entry; db is in invalid state")
+		return nil, errors.New("error: tx: cannot delete entry; db is in invalid state")
 	}
 	dres := t.bkt.delete(e)
 	if dres != nil {
@@ -162,18 +240,18 @@ func (t *Tx) Delete(e *Entry) (*Entry, error) {
 	return dres, nil
 }
 
-func (t *Tx) CreateIndex(pattern string) error {
+func (t *Tx) CreateIndex(pattern string, vtype IndexValueType) error {
 	if !t.db.open || t.bkt == nil || !t.bkt.open {
-		return errors.New("error: cannot create index; db is in invalid state")
+		return errors.New("error: tx: cannot create index; db is in invalid state")
 	}
 	curr, ok := t.bkt.indexes[pattern]
 	if ok && curr != nil {
-		return errors.New("error: cannot create index; index already exists")
+		return errors.New("error: tx: cannot create index; index already exists")
 	}
 	//Create Index
-	index, err := NewIndex(pattern, t.bkt)
+	index, err := NewIndex(pattern, vtype, t.bkt)
 	if err != nil {
-		return errors.New("error: could not create index")
+		return errors.Annotate(err, "error: tx: could not create index")
 	}
 	t.bkt.indexes[pattern] = index
 	//Add to backward indexes with nil value
@@ -185,12 +263,12 @@ func (t *Tx) CreateIndex(pattern string) error {
 
 func (t *Tx) DropIndex(pattern string) error {
 	if !t.db.open || t.bkt == nil || !t.bkt.open {
-		return errors.New("error: cannot drop index; db is in invalid state")
+		return errors.New("error: tx: cannot drop index; db is in invalid state")
 	}
 	//Add to backward indexes with pointer to index value
 	index, ok := t.bkt.indexes[pattern]
 	if !ok || index == nil {
-		return errors.New("error: cannot drop; index does not exist")
+		return errors.New("error: tx: cannot drop; index does not exist")
 	}
 	t.rbctx.backwardIndex[pattern] = index
 	//Set map pointer to nil, Delete entry from index map
@@ -207,22 +285,48 @@ func (t *Tx) Indexes() ([]string, error) {
 	return idxs, nil
 }
 
-func (t *Tx) Min() (*Entry, error) {
-	return nil, nil
+func (t *Tx) Min(index string) (*Entry, error) {
+	var item btree.Item
+	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
+		item = t.bkt.indexes[index].t.Min()
+
+	} else {
+		item = t.bkt.data.Min()
+	}
+	return item.(*Entry), nil
 }
 
-func (t *Tx) Max() (*Entry, error) {
-	return nil, nil
+func (t *Tx) Max(index string) (*Entry, error) {
+	var item btree.Item
+	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
+		item = t.bkt.indexes[index].t.Max()
+
+	} else {
+		item = t.bkt.data.Max()
+	}
+	return item.(*Entry), nil
 }
 
-func (t *Tx) Has(e *Entry) (bool, error) {
-	return false, nil
+func (t *Tx) Has(index string, e *Entry) (bool, error) {
+	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
+		return t.bkt.indexes[index].t.Has(e), nil
+	} else {
+		return t.bkt.data.Has(e), nil
+	}
 }
 
-func (t *Tx) Degree() (int, error) {
-	return 0, nil
+func (t *Tx) Size(index string) (int, error) {
+	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
+		return t.bkt.indexes[index].t.Len(), nil
+	} else {
+		return t.bkt.data.Len(), nil
+	}
 }
 
-func (t *Tx) ExpiresIn(key string) (time.Duration, error) {
-	return time.Second, nil
-}
+//func (t *Tx) ExpiresIn(key string) (time.Duration, error) {
+//	return time.Second, nil
+//}
+//
+//func (t *Tx) InvalidatesIn(key string) (time.Duration, error) {
+//	return time.Second, nil
+//}

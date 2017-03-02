@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"io"
 	"os"
 	"strconv"
@@ -11,10 +10,10 @@ import (
 	"time"
 
 	"github.com/cbergoon/btree"
+	"github.com/juju/errors"
 )
 
 //Todo: Implement Indexes
-//Todo: juju/errors
 //Todo: Finish Manager; invalidate, expire, callbacks
 //Todo: Implement Log Compaction
 
@@ -63,12 +62,12 @@ func (b *Bucket) loadBucketFile() error {
 			if err == io.EOF && len(iline) <= 0 {
 				break //Read is complete
 			} else if err != nil {
-				return errors.New("error: failed to read bucket file")
+				return errors.Annotate(err, "error: bucket: failed to read bucket file")
 			}
 			var size int = 0
 			size, err = strconv.Atoi(strings.TrimSpace(string(iline)))
 			if err != nil {
-				return errors.New("error: bucket file data is corrupt; missing or unusable entry length")
+				return errors.Annotate(err, "error: bucket: bucket file data is corrupt; missing or unusable entry length")
 			}
 			if size > 0 {
 				entry := make([]byte, size)
@@ -77,10 +76,10 @@ func (b *Bucket) loadBucketFile() error {
 				if err == io.ErrUnexpectedEOF || err == io.EOF {
 					break
 				} else if err != nil {
-					return errors.New("error: failed to read bucket file")
+					return errors.Annotate(err, "error: bucket: failed to read bucket file")
 				}
 				if readlen != size {
-					return errors.New("error: bucket file data is corrupt; entry length is invalid")
+					return errors.Annotate(err, "error: bucket: bucket file data is corrupt; entry length is invalid")
 				}
 				entries = append(entries, string(entry))
 			}
@@ -89,18 +88,18 @@ func (b *Bucket) loadBucketFile() error {
 		for _, e := range entries {
 			stype, sparts, err := parseEntryStmtTypeName(e)
 			if err != nil {
-				return errors.New("error: failed to parse statement")
+				return errors.Annotate(err, "error: bucket: failed to parse statement")
 			}
 			if stype == "INSERT" {
 				nentry, err := NewEntryFromStmt(sparts)
 				if err != nil {
-					return errors.New("error: failed to parse statement")
+					return errors.Annotate(err, "error: bucket: failed to parse statement")
 				}
 				b.insert(nentry)
 			} else if stype == "DELETE" {
 				nentry, err := NewEntryFromStmt(sparts)
 				if err != nil {
-					return errors.New("error: failed to parse statement")
+					return errors.Annotate(err, "error: bucket: failed to parse statement")
 				}
 				b.delete(nentry)
 			}
@@ -111,13 +110,13 @@ func (b *Bucket) loadBucketFile() error {
 		if err == io.EOF {
 			break //Read is complete
 		} else if err != nil {
-			return errors.New("error: failed to read file")
+			return errors.Annotate(err, "error: bucket: failed to read file")
 		}
 	}
 
 	//Rebuild Indexes
 	for _, ind := range b.indexes {
-		ind.rebuild()
+		ind.rebuild(b)
 	}
 
 	if err == io.EOF {
@@ -131,7 +130,7 @@ func parseEntryStmtTypeName(stmt string) (string, []string, error) {
 	if parts[0] == "INSERT" || parts[0] == "DELETE" {
 		return strings.TrimSpace(parts[0]), parts, nil
 	} else {
-		return "", nil, errors.New("error: invalid or unrecognized statement")
+		return "", nil, errors.New("error: bucket: invalid or unrecognized statement")
 	}
 }
 
@@ -141,13 +140,16 @@ func (b *Bucket) WriteAOFBuf() error {
 		if b.db.config.writeFreq == MNGFREQ {
 			if len(b.aofbuf) > 0 {
 				written, err := b.file.Write(b.aofbuf)
-				if err != nil || written != len(b.aofbuf) {
-					return errors.New("error: failed to write bucket file")
+				if err != nil {
+					return errors.Annotate(err, "error: bucket: failed to write bucket file")
+				}
+				if written != len(b.aofbuf) {
+					return errors.New("error: bucket: failed to write bucket file")
 				}
 				if b.db.config.writeFreq == EACH {
 					err := b.file.Sync()
 					if err != nil {
-						errors.New("error: failed to sync file")
+						errors.Annotate(err, "error: bucket: failed to sync file")
 					}
 				}
 				b.aofbuf = nil
@@ -175,11 +177,11 @@ func (b *Bucket) OpenBucket(file string) error {
 		var err error
 		b.file, err = os.OpenFile(file, os.O_CREATE|os.O_RDWR, 0666)
 		if err != nil {
-			return errors.New("error: failed to open bucket file")
+			return errors.Annotate(err, "error: bucket: failed to open bucket file")
 		}
 		err = b.loadBucketFile()
 		if err != nil {
-			return errors.New("error failed to load from file")
+			return errors.Annotate(err, "error bucket: failed to load from file")
 		}
 	}
 	return nil
@@ -192,24 +194,33 @@ func (b *Bucket) Close() error {
 		if len(b.aofbuf) > 0 {
 			_, err := b.file.Write(b.aofbuf)
 			if err != nil {
-				return errors.New("error: failed to write to bucket")
+				return errors.Annotate(err, "error: bucket: failed to write to bucket")
 			}
 			b.aofbuf = nil
 		}
 		if err := b.file.Sync(); err != nil {
-			return errors.New("error: failed to sync bucket file")
+			return errors.Annotate(err, "error: bucket: failed to sync bucket file")
 		}
 		b.open = false
 		b.aofbuf, b.data, b.eviction, b.invalidation, b.indexes = nil, nil, nil, nil, nil
 		err := b.file.Close()
 		if err != nil {
-			return errors.New("error: failed to close bucket file")
+			return errors.Annotate(err, "error: bucket: failed to close bucket file")
 		}
 	}
 	return nil
 }
 
+func (b *Bucket) indexExists(index string) bool {
+	idx, ok := b.indexes[index]
+	if ok && idx != nil {
+		return true
+	}
+	return false
+}
+
 func (b *Bucket) get(key *Entry) *Entry {
+	//Todo: error if entry == nil || if db is nil || if db not open || if bucket is nil || if bucket not open
 	if e := b.data.Get(key); e != nil {
 		return e.(*Entry)
 	}
@@ -217,6 +228,7 @@ func (b *Bucket) get(key *Entry) *Entry {
 }
 
 func (b *Bucket) insert(entry *Entry) *Entry {
+	//Todo: error if entry == nil || if db is nil || if db not open || if bucket is nil || if bucket not open
 	var pentry *Entry = nil
 	if p := b.data.ReplaceOrInsert(entry); p != nil {
 		pentry = p.(*Entry)
@@ -230,7 +242,7 @@ func (b *Bucket) insert(entry *Entry) *Entry {
 		}
 		//Iterate through indexes delete pentry
 		for _, ind := range b.indexes {
-			ind.t.Delete(pentry)
+			ind.t.Delete(pentry) //Todo: Indexes: Use TX Functions
 		}
 	}
 	if entry.opts.doesExp {
@@ -241,12 +253,13 @@ func (b *Bucket) insert(entry *Entry) *Entry {
 	}
 	//Iterate through indexes insert entry
 	for _, ind := range b.indexes {
-		ind.t.ReplaceOrInsert(pentry)
+		ind.t.ReplaceOrInsert(entry) //Todo: Indexes: Use TX Functions
 	}
 	return pentry
 }
 
 func (b *Bucket) delete(key *Entry) *Entry {
+	//Todo: error if entry == nil || if db is nil || if db not open || if bucket is nil || if bucket not open
 	var pentry *Entry
 	if p := b.data.Delete(key); p != nil {
 		pentry = p.(*Entry)
@@ -260,7 +273,7 @@ func (b *Bucket) delete(key *Entry) *Entry {
 		}
 		//Iterate through indexes delete pentry
 		for _, ind := range b.indexes {
-			ind.t.Delete(pentry)
+			ind.t.Delete(pentry) //Todo: Indexes: Use TX Functions
 		}
 	}
 	return nil
@@ -268,11 +281,11 @@ func (b *Bucket) delete(key *Entry) *Entry {
 
 func (b *Bucket) StartTx(mode RWMode) (*Tx, error) {
 	if b.db == nil || !b.db.open || b == nil || !b.open {
-		return nil, errors.New("error: resource is not open")
+		return nil, errors.New("error: bucket: resource is not open")
 	}
 	tx, err := NewTx(b.db, b, mode)
 	if err != nil {
-		return nil, errors.New("error: failed to create transaction")
+		return nil, errors.Annotate(err, "error: bucket: failed to create transaction")
 	}
 	tx.lock()
 	return tx, nil
@@ -381,7 +394,7 @@ func (b *Bucket) bucketDropStmt() []byte {
 func NewBucketFromStmt(db *StitchDB, stmtParts []string) (*Bucket, error) {
 	opts, err := NewBucketOptionsFromStmt(stmtParts)
 	if err != nil {
-		return nil, errors.New("error: failed to parse statement")
+		return nil, errors.Annotate(err, "error: bucket: failed to parse statement")
 	}
 	return NewBucket(db, opts, stmtParts[0])
 }

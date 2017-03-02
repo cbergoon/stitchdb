@@ -2,11 +2,10 @@ package main
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
-	"strings"
-
-	"github.com/pkg/errors"
+	"github.com/juju/errors"
 )
 
 type EntryOptions struct {
@@ -37,7 +36,7 @@ func NewEntryOptions(options ...func(*EntryOptions) error) (*EntryOptions, error
 	for _, option := range options {
 		err := option(c)
 		if err != nil {
-			return nil, ErrCouldNotCreateConfig
+			return nil, errors.Annotate(err, "error: entry_options: failed to create entry options")
 		}
 	}
 	return c, nil
@@ -68,22 +67,22 @@ func (e *EntryOptions) entryOptionsCreateStmt() []byte {
 func NewEntryOptionsFromStmt(stmt []string) (*EntryOptions, error) {
 	doesExp, err := strconv.ParseBool(stmt[0])
 	if err != nil {
-		return nil, errors.New("error: failed to parse entry options")
+		return nil, errors.Annotate(err, "error: entry_options: failed to parse entry options")
 	}
 	doesInv, err := strconv.ParseBool(stmt[1])
 	if err != nil {
-		return nil, errors.New("error: failed to parse entry options")
+		return nil, errors.Annotate(err, "error: entry_options: failed to parse entry options")
 	}
 	ets := strings.TrimSpace(stmt[2])
 	expInt, err := strconv.ParseInt(ets, 10, 64)
 	if err != nil {
-		return nil, errors.New("error: failed to parse entry options")
+		return nil, errors.Annotate(err, "error: entry_options: failed to parse entry options")
 	}
 	expTime := time.Unix(expInt, 0)
 	its := strings.TrimSpace(stmt[3])
 	invInt, err := strconv.ParseInt(its, 10, 64)
 	if err != nil {
-		return nil, errors.New("error: failed to parse entry options")
+		return nil, errors.Annotate(err, "error: entry_options: failed to parse entry options")
 	}
 	invTime := time.Unix(invInt, 0)
 	return &EntryOptions{

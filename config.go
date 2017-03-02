@@ -1,18 +1,15 @@
 package main
 
 import (
-	"errors"
 	"time"
-)
 
-var (
-	ErrCouldNotCreateConfig = errors.New("config: could not create configuration")
+	"github.com/juju/errors"
 )
 
 type IOFrequency int
 
 const (
-	EACH    IOFrequency = iota
+	EACH IOFrequency = iota
 	MNGFREQ
 	NONE
 )
@@ -82,7 +79,7 @@ func NewConfig(options ...func(*Config) error) (*Config, error) {
 	for _, option := range options {
 		err := option(c)
 		if err != nil {
-			return nil, ErrCouldNotCreateConfig
+			return nil, errors.Annotate(err, "config: could not create configuration")
 		}
 	}
 	return c, nil
