@@ -7,9 +7,6 @@ import (
 	"github.com/juju/errors"
 )
 
-//Todo: Finish Tx Operations
-//Todo: Implement Support for Indexes
-
 type RbCtx struct {
 	backward      map[string]*Entry
 	forward       map[string]*Entry
@@ -17,10 +14,11 @@ type RbCtx struct {
 }
 
 type Tx struct {
-	db    *StitchDB
-	bkt   *Bucket
-	mode  RWMode
-	rbctx *RbCtx
+	db        *StitchDB
+	bkt       *Bucket
+	mode      RWMode
+	rbctx     *RbCtx
+	iterating bool
 }
 
 func NewTx(db *StitchDB, bkt *Bucket, mode RWMode) (*Tx, error) {
@@ -100,11 +98,17 @@ func (t *Tx) unlock() {
 	}
 }
 
+func (t *Tx) setIterating(i bool) {
+	t.iterating = i
+}
+
 func (t *Tx) Ascend(index string, f func(e *Entry) bool) error {
 	i := func(i btree.Item) bool {
 		eItem := i.(*Entry)
 		return f(eItem)
 	}
+	t.setIterating(true)
+	defer t.setIterating(false)
 	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
 		t.bkt.indexes[index].t.Ascend(i)
 	} else {
@@ -118,6 +122,8 @@ func (t *Tx) AscendGreaterOrEqual(index string, pivot *Entry, f func(e *Entry) b
 		eItem := i.(*Entry)
 		return f(eItem)
 	}
+	t.setIterating(true)
+	defer t.setIterating(false)
 	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
 		t.bkt.indexes[index].t.AscendGreaterOrEqual(pivot, i)
 	} else {
@@ -131,6 +137,8 @@ func (t *Tx) AscendLessThan(index string, pivot *Entry, f func(e *Entry) bool) e
 		eItem := i.(*Entry)
 		return f(eItem)
 	}
+	t.setIterating(true)
+	defer t.setIterating(false)
 	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
 		t.bkt.indexes[index].t.AscendLessThan(pivot, i)
 	} else {
@@ -144,6 +152,8 @@ func (t *Tx) AscendRange(index string, greaterOrEqual *Entry, lessThan *Entry, f
 		eItem := i.(*Entry)
 		return f(eItem)
 	}
+	t.setIterating(true)
+	defer t.setIterating(false)
 	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
 		t.bkt.indexes[index].t.AscendRange(greaterOrEqual, lessThan, i)
 	} else {
@@ -157,6 +167,8 @@ func (t *Tx) Descend(index string, f func(e *Entry) bool) error {
 		eItem := i.(*Entry)
 		return f(eItem)
 	}
+	t.setIterating(true)
+	defer t.setIterating(false)
 	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
 		t.bkt.indexes[index].t.Descend(i)
 	} else {
@@ -171,6 +183,8 @@ func (t *Tx) DescendGreaterThan(index string, pivot *Entry, f func(e *Entry) boo
 		eItem := i.(*Entry)
 		return f(eItem)
 	}
+	t.setIterating(true)
+	defer t.setIterating(false)
 	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
 		t.bkt.indexes[index].t.DescendGreaterThan(pivot, i)
 	} else {
@@ -184,6 +198,8 @@ func (t *Tx) DescendLessOrEqual(index string, pivot *Entry, f func(e *Entry) boo
 		eItem := i.(*Entry)
 		return f(eItem)
 	}
+	t.setIterating(true)
+	defer t.setIterating(false)
 	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
 		t.bkt.indexes[index].t.DescendLessOrEqual(pivot, i)
 	} else {
@@ -197,6 +213,8 @@ func (t *Tx) DescendRange(index string, lessOrEqual *Entry, greaterThan *Entry, 
 		eItem := i.(*Entry)
 		return f(eItem)
 	}
+	t.setIterating(true)
+	defer t.setIterating(false)
 	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
 		t.bkt.indexes[index].t.DescendRange(lessOrEqual, greaterThan, i)
 	} else {
@@ -219,6 +237,9 @@ func (t *Tx) Get(e *Entry) (*Entry, error) {
 }
 
 func (t *Tx) Set(e *Entry) (*Entry, error) {
+	if t.iterating {
+		return nil, errors.New("error: tx: transaction is iterating; cannot set entry")
+	}
 	if !t.db.open || t.bkt == nil || !t.bkt.open {
 		return nil, errors.New("error: tx: cannot set entry; db is in invalid state")
 	}
@@ -229,6 +250,9 @@ func (t *Tx) Set(e *Entry) (*Entry, error) {
 }
 
 func (t *Tx) Delete(e *Entry) (*Entry, error) {
+	if t.iterating {
+		return nil, errors.New("error: tx: transaction is iterating; cannot set entry")
+	}
 	if !t.db.open || t.bkt == nil || !t.bkt.open {
 		return nil, errors.New("error: tx: cannot delete entry; db is in invalid state")
 	}
@@ -257,7 +281,7 @@ func (t *Tx) CreateIndex(pattern string, vtype IndexValueType) error {
 	//Add to backward indexes with nil value
 	t.rbctx.backwardIndex[pattern] = nil
 	//Rebuild Index
-	t.bkt.indexes[pattern].build(t.bkt)
+	t.bkt.indexes[pattern].build()
 	return nil
 }
 
@@ -322,11 +346,3 @@ func (t *Tx) Size(index string) (int, error) {
 		return t.bkt.data.Len(), nil
 	}
 }
-
-//func (t *Tx) ExpiresIn(key string) (time.Duration, error) {
-//	return time.Second, nil
-//}
-//
-//func (t *Tx) InvalidatesIn(key string) (time.Duration, error) {
-//	return time.Second, nil
-//}

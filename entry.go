@@ -8,8 +8,6 @@ import (
 	"github.com/juju/errors"
 )
 
-//Todo: Implement Less function
-
 type Entry struct {
 	k       string
 	v       string

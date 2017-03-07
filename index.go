@@ -44,13 +44,10 @@ func (i *Index) less(x, y *Entry) bool {
 	}
 }
 
-func (i *Index) entryValidForIndex(e *Entry) bool {
-	//Todo: Indexes: Implement
-	return false
-}
-
 func (i *Index) get(e *Entry) *Entry {
-	//Todo: Check entry is valid for index
+	if !gjson.Get(e.v, i.ppath).Exists() {
+		return nil
+	}
 	res := i.t.Get(e)
 	var eres *Entry
 	if res != nil {
@@ -60,20 +57,9 @@ func (i *Index) get(e *Entry) *Entry {
 }
 
 func (i *Index) insert(e *Entry) *Entry {
-	//Todo: error if entry == nil || if db is nil || if db not open || if bucket is nil || if bucket not open || if index is nil || if index tree is nil
-	if e == nil {
-		//Error
+	if !gjson.Get(e.v, i.ppath).Exists() {
+		return nil
 	}
-	if i.bkt.db == nil || !i.bkt.db.open {
-		//Error
-	}
-	if i.bkt == nil || !i.bkt.open {
-		//Error
-	}
-	if i == nil || i.t == nil {
-		//Error
-	}
-	//Todo: Check entry is valid for index
 	var epres *Entry
 	pres := i.t.ReplaceOrInsert(e)
 	if pres != nil {
@@ -83,8 +69,9 @@ func (i *Index) insert(e *Entry) *Entry {
 }
 
 func (i *Index) delete(e *Entry) *Entry {
-	//Todo: error if entry == nil || if db is nil || if db not open || if bucket is nil || if bucket not open || if index is nil || if index tree is nil
-	//Todo: Check entry is valid for index
+	if !gjson.Get(e.v, i.ppath).Exists() {
+		return nil
+	}
 	var edres *Entry
 	dres := i.t.Delete(e)
 	if dres != nil {
@@ -93,10 +80,17 @@ func (i *Index) delete(e *Entry) *Entry {
 	return edres
 }
 
-func (i *Index) build(bucket *Bucket) {
-	//Todo: Indexes: Implement
+func (i *Index) build() {
+	i.bkt.data.Ascend(func(item btree.Item) bool {
+		eItem := item.(*Entry)
+		return func(e *Entry) bool {
+			i.insert(e)
+			return true
+		}(eItem)
+	})
 }
 
-func (i *Index) rebuild(bucket *Bucket) {
-	//Todo: Indexes: Implement
+func (i *Index) rebuild() {
+	i.t = btree.New(i.bkt.options.btdeg, i)
+	i.build()
 }

@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	BUCKET_CONFIG_FILE    string = "sbkt.conf"
-	BUCKET_FILE_EXTENSION string = ".stitch"
+	BUCKET_CONFIG_FILE        string = "sbkt.conf"
+	BUCKET_FILE_EXTENSION     string = ".stitch"
+	BUCKET_TMP_FILE_EXTENSION string = ".stitch.tmp"
 )
 
 type StitchDB struct {
@@ -31,7 +32,7 @@ func NewStitchDB(config *Config) (*StitchDB, error) {
 		config:  config,
 		buckets: make(map[string]*Bucket),
 	}
-	sysbktopts, err := NewBucketOptions(BTreeDegree(32)) //Todo: set appropriate bucket options for sys
+	sysbktopts, err := NewBucketOptions(BTreeDegree(32), System)
 	if err != nil {
 		return nil, errors.Annotate(err, "error: db: failed to create system bucket options")
 	}

@@ -79,7 +79,7 @@ func NewConfig(options ...func(*Config) error) (*Config, error) {
 	for _, option := range options {
 		err := option(c)
 		if err != nil {
-			return nil, errors.Annotate(err, "config: could not create configuration")
+			return nil, errors.Annotate(err, "error: config: could not create configuration")
 		}
 	}
 	return c, nil
