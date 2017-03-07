@@ -9,13 +9,14 @@ import (
 	"sync"
 	"time"
 
+	"fmt"
+
 	"github.com/cbergoon/btree"
 	"github.com/juju/errors"
 )
 
-//Todo: Implement Indexes
-//Todo: Finish Manager; invalidate, expire, callbacks
-//Todo: Implement Log Compaction
+
+const COMPACT_FACTOR int = 10
 
 type Bucket struct {
 	name         string
@@ -26,6 +27,7 @@ type Bucket struct {
 	invalidation *btree.BTree
 	indexes      map[string]*Index
 	file         *os.File
+	rct          uint64
 	open         bool
 	options      *BucketOptions
 	aofbuf       []byte
@@ -116,7 +118,7 @@ func (b *Bucket) loadBucketFile() error {
 
 	//Rebuild Indexes
 	for _, ind := range b.indexes {
-		ind.rebuild(b)
+		ind.rebuild()
 	}
 
 	if err == io.EOF {
@@ -220,7 +222,6 @@ func (b *Bucket) indexExists(index string) bool {
 }
 
 func (b *Bucket) get(key *Entry) *Entry {
-	//Todo: error if entry == nil || if db is nil || if db not open || if bucket is nil || if bucket not open
 	if e := b.data.Get(key); e != nil {
 		return e.(*Entry)
 	}
@@ -228,11 +229,11 @@ func (b *Bucket) get(key *Entry) *Entry {
 }
 
 func (b *Bucket) insert(entry *Entry) *Entry {
-	//Todo: error if entry == nil || if db is nil || if db not open || if bucket is nil || if bucket not open
 	var pentry *Entry = nil
 	if p := b.data.ReplaceOrInsert(entry); p != nil {
 		pentry = p.(*Entry)
 	}
+	b.rct++
 	if pentry != nil {
 		if pentry.opts.doesExp {
 			b.eviction.Delete(pentry)
@@ -242,7 +243,7 @@ func (b *Bucket) insert(entry *Entry) *Entry {
 		}
 		//Iterate through indexes delete pentry
 		for _, ind := range b.indexes {
-			ind.t.Delete(pentry) //Todo: Indexes: Use TX Functions
+			ind.delete(pentry)
 		}
 	}
 	if entry.opts.doesExp {
@@ -253,17 +254,17 @@ func (b *Bucket) insert(entry *Entry) *Entry {
 	}
 	//Iterate through indexes insert entry
 	for _, ind := range b.indexes {
-		ind.t.ReplaceOrInsert(entry) //Todo: Indexes: Use TX Functions
+		ind.insert(entry)
 	}
 	return pentry
 }
 
 func (b *Bucket) delete(key *Entry) *Entry {
-	//Todo: error if entry == nil || if db is nil || if db not open || if bucket is nil || if bucket not open
 	var pentry *Entry
 	if p := b.data.Delete(key); p != nil {
 		pentry = p.(*Entry)
 	}
+	b.rct++
 	if pentry != nil {
 		if pentry.opts.doesExp {
 			b.eviction.Delete(pentry)
@@ -273,7 +274,7 @@ func (b *Bucket) delete(key *Entry) *Entry {
 		}
 		//Iterate through indexes delete pentry
 		for _, ind := range b.indexes {
-			ind.t.Delete(pentry) //Todo: Indexes: Use TX Functions
+			ind.delete(pentry)
 		}
 	}
 	return nil
@@ -318,42 +319,117 @@ func (b *Bucket) manager() error {
 	mngct := time.NewTicker(b.db.config.manageFrequency)
 	defer mngct.Stop()
 	for range mngct.C {
+		b.lock(MODE_READ_WRITE)
 		if !b.db.open {
 			break
 		}
 		if b.db.config.persist {
 			if b.db.config.writeFreq == MNGFREQ {
-				b.lock(MODE_READ_WRITE)
 				if len(b.aofbuf) > 0 {
-					b.file.Write(b.aofbuf)
+					_, err := b.file.Write(b.aofbuf)
+					if err != nil {
+						fmt.Println(errors.ErrorStack(errors.Annotate(err, "error: bucket: failed to write to bucket file")))
+					}
 					b.aofbuf = nil
 					if b.db.config.syncFreq == EACH {
-						b.file.Sync()
+						err := b.file.Sync()
+						if err != nil {
+							fmt.Println(errors.ErrorStack(errors.Annotate(err, "error: bucket: failed to sync1 bucket file")))
+						}
+					} else if b.db.config.syncFreq == MNGFREQ {
+						err := b.file.Sync()
+						if err != nil {
+							fmt.Println(errors.ErrorStack(errors.Annotate(err, "error: bucket: failed to sync2 bucket file")))
+						}
 					}
 				}
-				b.unlock(MODE_READ_WRITE)
 			}
-			if b.db.config.syncFreq == MNGFREQ {
-				b.lock(MODE_READ_WRITE)
-				b.file.Sync()
-				b.unlock(MODE_READ_WRITE)
+			if b != nil && b.data != nil {
+				if b.rct > uint64(b.data.Len()*COMPACT_FACTOR) {
+					err := b.compactLog()
+					if err != nil {
+						fmt.Println(errors.ErrorStack(errors.Annotate(err, "error: bucket: failed to compact bucket file")))
+					}
+				}
 			}
 		}
 
-		//Todo: Remove expires
-		//Todo: Invalidate invalid
-		//Todo: Future: Add geo location call backs
+		if b != nil && b.data != nil {
+			for i := 0; i < b.eviction.Len(); i++ {
+				var eitem *Entry
+				mitem := b.eviction.Min()
+				if mitem != nil {
+					eitem = mitem.(*Entry)
+				}
+				if eitem.IsExpired() {
+					b.delete(eitem)
+					//callback
+				}
+			}
+		}
+
+		if b != nil && b.data != nil {
+			for i := 0; i < b.invalidation.Len(); i++ {
+				var eitem *Entry
+				mitem := b.invalidation.Min()
+				if mitem != nil {
+					eitem = mitem.(*Entry)
+				}
+				if eitem.IsInvalid() {
+					eitem.invalid = true
+					//callback
+				}
+			}
+		}
+
+		b.unlock(MODE_READ_WRITE)
 	}
 	return nil
 }
 
-func (b *Bucket) needCompactLog() error {
-	//Todo: Implement
-	return nil
-}
-
 func (b *Bucket) compactLog() error {
-	//Todo: Implement
+	//open new tmp file
+	var err error
+	tmpFile, err := os.OpenFile(b.db.getDBFilePath(b.name+BUCKET_TMP_FILE_EXTENSION), os.O_CREATE|os.O_RDWR, 0666)
+	if err != nil {
+		return errors.Annotate(err, "error: bucket: failed to open temporary bucket file")
+	}
+	var buf []byte
+	b.data.Ascend(func(item btree.Item) bool {
+		eItem := item.(*Entry)
+		return func(e *Entry) bool {
+			buf = append(buf, e.EntryInsertStmt()...)
+			if len(buf) > 1024*1024 {
+				tmpFile.Write(buf)
+				buf = nil
+			}
+			return true
+		}(eItem)
+	})
+	err = tmpFile.Sync()
+	if err != nil {
+		return errors.Annotate(err, "error: bucket: failed to sync temporary bucket file")
+	}
+	err = b.file.Close()
+	if err != nil {
+		return errors.Annotate(err, "error: bucket: failed to close bucket file")
+	}
+	err = os.Remove(b.db.getDBFilePath(b.name + BUCKET_FILE_EXTENSION))
+	if err != nil {
+		return errors.Annotate(err, "error: bucket: failed to delete bucket file")
+	}
+	err = tmpFile.Close()
+	if err != nil {
+		return errors.Annotate(err, "error: bucket: failed to close temporary bucket file")
+	}
+	err = os.Rename(b.db.getDBFilePath(b.name+BUCKET_TMP_FILE_EXTENSION), b.db.getDBFilePath(b.name+BUCKET_FILE_EXTENSION))
+	if err != nil {
+		return errors.Annotate(err, "error: bucket: failed to rename bucket file")
+	}
+	b.file, err = os.OpenFile(b.db.getDBFilePath(b.name+BUCKET_FILE_EXTENSION), os.O_CREATE|os.O_RDWR, 0666)
+	if err != nil {
+		return errors.Annotate(err, "error: bucket: failed to open bucket file")
+	}
 	return nil
 }
 

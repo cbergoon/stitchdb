@@ -46,7 +46,7 @@ func NewBucketOptions(options ...func(*BucketOptions) error) (*BucketOptions, er
 	for _, option := range options {
 		err := option(c)
 		if err != nil {
-			return nil, ErrCouldNotCreateConfig
+			return nil, errors.New("error: bucket_options: could not create bucket options")
 		}
 	}
 	return c, nil
