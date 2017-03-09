@@ -12,9 +12,9 @@ import (
 	"fmt"
 
 	"github.com/cbergoon/btree"
+	"github.com/dhconnelly/rtreego"
 	"github.com/juju/errors"
 )
-
 
 const COMPACT_FACTOR int = 10
 
@@ -25,6 +25,7 @@ type Bucket struct {
 	data         *btree.BTree
 	eviction     *btree.BTree
 	invalidation *btree.BTree
+	rtree        *rtreego.Rtree
 	indexes      map[string]*Index
 	file         *os.File
 	rct          uint64
@@ -245,6 +246,7 @@ func (b *Bucket) insert(entry *Entry) *Entry {
 		for _, ind := range b.indexes {
 			ind.delete(pentry)
 		}
+		//Delete from Rtree
 	}
 	if entry.opts.doesExp {
 		b.eviction.ReplaceOrInsert(entry)
@@ -256,6 +258,7 @@ func (b *Bucket) insert(entry *Entry) *Entry {
 	for _, ind := range b.indexes {
 		ind.insert(entry)
 	}
+	//Insert into Rtree
 	return pentry
 }
 
@@ -276,6 +279,7 @@ func (b *Bucket) delete(key *Entry) *Entry {
 		for _, ind := range b.indexes {
 			ind.delete(pentry)
 		}
+		//Delete from Rtree
 	}
 	return nil
 }

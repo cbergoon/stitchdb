@@ -5,14 +5,16 @@ import (
 	"time"
 
 	"github.com/cbergoon/btree"
+	"github.com/dhconnelly/rtreego"
 	"github.com/juju/errors"
 )
 
 type Entry struct {
-	k       string
-	v       string
-	opts    *EntryOptions
-	invalid bool
+	k        string
+	v        string
+	opts     *EntryOptions
+	invalid  bool
+	location rtreego.Point
 }
 
 func NewEntry(k string, v string, options *EntryOptions) (*Entry, error) {

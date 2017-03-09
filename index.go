@@ -39,6 +39,8 @@ func (i *Index) less(x, y *Entry) bool {
 		return gjson.Get(x.v, i.ppath).Uint() < gjson.Get(y.v, i.ppath).Uint()
 	case FLOAT_INDEX:
 		return gjson.Get(x.v, i.ppath).Float() < gjson.Get(y.v, i.ppath).Float()
+	case STRING_INDEX:
+		return gjson.Get(x.v, i.ppath).Float() < gjson.Get(y.v, i.ppath).Float()
 	default: //Use String Value
 		return gjson.Get(x.v, i.ppath).String() < gjson.Get(y.v, i.ppath).String()
 	}
