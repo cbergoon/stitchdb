@@ -7,6 +7,7 @@ import (
 	"github.com/cbergoon/btree"
 	"github.com/dhconnelly/rtreego"
 	"github.com/juju/errors"
+	"github.com/tidwall/gjson"
 )
 
 type Entry struct {
@@ -17,13 +18,47 @@ type Entry struct {
 	location rtreego.Point
 }
 
-func NewEntry(k string, v string, options *EntryOptions) (*Entry, error) {
+func NewEntry(k string, v string, geo bool, options *EntryOptions) (*Entry, error) {
 	opts, err := NewEntryOptions()
 	if err != nil {
 		return nil, errors.Annotate(err, "error: entry: failed to create entry options")
 	}
 	if options != nil {
 		opts = options
+	}
+	var l rtreego.Point
+	if geo {
+		ljson := gjson.Get(v, "coords")
+		if ljson.Exists() {
+			ljson.ForEach(func(key, value gjson.Result) bool {
+				l = append(l, value.Float())
+				return true // keep iterating
+			})
+		}
+	}
+	return &Entry{
+		k:        k,
+		v:        v,
+		opts:     opts,
+		location: l,
+	}, nil
+}
+
+func NewEntryWithGeo(k string, v string, options *EntryOptions) (*Entry, error) {
+	opts, err := NewEntryOptions()
+	if err != nil {
+		return nil, errors.Annotate(err, "error: entry: failed to create entry options")
+	}
+	if options != nil {
+		opts = options
+	}
+	var l rtreego.Point
+	ljson := gjson.Get(v, "coords")
+	if ljson.Exists() {
+		ljson.ForEach(func(key, value gjson.Result) bool {
+			l = append(l, value.Float())
+			return true // keep iterating
+		})
 	}
 	return &Entry{
 		k:    k,
@@ -78,6 +113,12 @@ func (e *Entry) InvalidatesAt() time.Time {
 	return e.opts.invTime
 }
 
+func (e *Entry) Bounds() *rtreego.Rect {
+	// define the bounds of s to be a rectangle centered at s.location
+	// with side lengths 2 * tol:
+	return e.location.ToRect(e.opts.tol)
+}
+
 func (e *Entry) EntryInsertStmt() []byte {
 	var buf, cbuf []byte
 
@@ -121,7 +162,12 @@ func NewEntryFromStmt(stmtParts []string) (*Entry, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "error: entry: failed to parse entry options")
 	}
-	entry, err := NewEntry(stmtParts[1], stmtParts[2], opts)
+	var entry *Entry
+	if gjson.Get(stmtParts[2], "coords").Exists() {
+		entry, err = NewEntry(stmtParts[1], stmtParts[2], true, opts)
+	} else {
+		entry, err = NewEntry(stmtParts[1], stmtParts[2], false, opts)
+	}
 	if err != nil {
 		return nil, errors.Annotate(err, "error: entry: failed to create entry")
 	}

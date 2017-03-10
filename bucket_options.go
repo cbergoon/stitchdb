@@ -12,7 +12,6 @@ type BucketOptions struct {
 	geo      bool
 	georincl bool
 	time     bool
-	tol      float64
 }
 
 func System(b *BucketOptions) error {
@@ -33,13 +32,6 @@ func GeoRangeIsInclusive(b *BucketOptions) error {
 func Time(b *BucketOptions) error {
 	b.time = true
 	return nil
-}
-
-func Tol(t float64) func(*BucketOptions) error {
-	return func(b *BucketOptions) error {
-		b.tol = t
-		return nil
-	}
 }
 
 func BTreeDegree(degree int) func(*BucketOptions) error {
@@ -71,35 +63,29 @@ func (b *BucketOptions) bucketOptionsCreateStmt() []byte {
 	cbuf = append(cbuf, strconv.Itoa(boolToInt(b.georincl))...)
 	cbuf = append(cbuf, ':')
 	cbuf = append(cbuf, strconv.Itoa(boolToInt(b.time))...)
-	cbuf = append(cbuf, ':')
-	cbuf = append(cbuf, strconv.FormatFloat(b.tol, 'f', -1, 64)...)
 	return cbuf
 }
 
 func NewBucketOptionsFromStmt(stmt []string) (*BucketOptions, error) {
 	btdeg, err := strconv.ParseInt(stmt[1], 10, 64)
 	if err != nil {
-		return nil, errors.Annotate(err, "error: failed to parse bucket options")
+		return nil, errors.Annotate(err, "error: bucket_optiona: failed to parse bucket options")
 	}
 	system, err := strconv.ParseBool(stmt[2])
 	if err != nil {
-		return nil, errors.Annotate(err, "error: failed to parse bucket options")
+		return nil, errors.Annotate(err, "error: bucket_optiona: failed to parse bucket options")
 	}
 	geo, err := strconv.ParseBool(stmt[3])
 	if err != nil {
-		return nil, errors.Annotate(err, "error: failed to parse bucket options")
+		return nil, errors.Annotate(err, "error: bucket_optiona: failed to parse bucket options")
 	}
 	georincl, err := strconv.ParseBool(stmt[4])
 	if err != nil {
-		return nil, errors.Annotate(err, "error: failed to parse bucket options")
+		return nil, errors.Annotate(err, "error: bucket_optiona: failed to parse bucket options")
 	}
 	time, err := strconv.ParseBool(stmt[5])
 	if err != nil {
-		return nil, errors.Annotate(err, "error: failed to parse bucket options")
-	}
-	tol, err := strconv.ParseFloat(stmt[6], 64)
-	if err != nil {
-		return nil, errors.Annotate(err, "error: failed to parse bucket options")
+		return nil, errors.Annotate(err, "error: bucket_optiona: failed to parse bucket options")
 	}
 	opts := &BucketOptions{
 		btdeg:    int(btdeg),
@@ -107,7 +93,7 @@ func NewBucketOptionsFromStmt(stmt []string) (*BucketOptions, error) {
 		geo:      geo,
 		georincl: georincl,
 		time:     time,
-		tol:      tol,
+		//tol:      tol,
 	}
 	return opts, nil
 }
