@@ -119,6 +119,19 @@ func (e *Entry) Bounds() *rtreego.Rect {
 	return e.location.ToRect(e.opts.tol)
 }
 
+//Maybe make the returned function an option that can be set
+func GetEntryComparator() func(obj1, obj2 rtreego.Spatial) bool {
+	return func(obj1, obj2 rtreego.Spatial) bool {
+		sp1 := obj1.(*Entry)
+		sp2 := obj2.(*Entry)
+		return sp1.k == sp2.k
+	}
+}
+
+//func (e *Entry) ValidForEntry(e *Entry) bool {
+//	return
+//}
+
 func (e *Entry) EntryInsertStmt() []byte {
 	var buf, cbuf []byte
 

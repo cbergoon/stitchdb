@@ -14,6 +14,7 @@ import (
 	"github.com/cbergoon/btree"
 	"github.com/dhconnelly/rtreego"
 	"github.com/juju/errors"
+	"github.com/tidwall/gjson"
 )
 
 const COMPACT_FACTOR int = 10
@@ -50,6 +51,7 @@ func NewBucket(db *StitchDB, bucketOptions *BucketOptions, name string) (*Bucket
 		data:         btree.New(bucketOptions.btdeg, nil),
 		eviction:     btree.New(bucketOptions.btdeg, &eItype{db: db}),
 		invalidation: btree.New(bucketOptions.btdeg, &iItype{db: db}),
+		rtree:        rtreego.NewTree(bucketOptions.dims, bucketOptions.btdeg, bucketOptions.btdeg*2),
 		indexes:      make(map[string]*Index),
 	}, nil
 }
@@ -247,6 +249,12 @@ func (b *Bucket) insert(entry *Entry) *Entry {
 			ind.delete(pentry)
 		}
 		//Delete from Rtree
+		if b.options.geo {
+			ljson := gjson.Get(pentry.v, "coords")
+			if ljson.Exists() {
+				b.rtree.DeleteWithComparator(pentry, GetEntryComparator())
+			}
+		}
 	}
 	if entry.opts.doesExp {
 		b.eviction.ReplaceOrInsert(entry)
@@ -259,6 +267,12 @@ func (b *Bucket) insert(entry *Entry) *Entry {
 		ind.insert(entry)
 	}
 	//Insert into Rtree
+	if b.options.geo {
+		ljson := gjson.Get(entry.v, "coords")
+		if ljson.Exists() {
+			b.rtree.Insert(entry)
+		}
+	}
 	return pentry
 }
 
@@ -280,6 +294,14 @@ func (b *Bucket) delete(key *Entry) *Entry {
 			ind.delete(pentry)
 		}
 		//Delete from Rtree
+		if b.options.geo {
+			if b.options.geo {
+				ljson := gjson.Get(pentry.v, "coords")
+				if ljson.Exists() {
+					b.rtree.DeleteWithComparator(pentry, GetEntryComparator())
+				}
+			}
+		}
 	}
 	return nil
 }

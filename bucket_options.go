@@ -12,6 +12,7 @@ type BucketOptions struct {
 	geo      bool
 	georincl bool
 	time     bool
+	dims     int
 }
 
 func System(b *BucketOptions) error {
@@ -32,6 +33,13 @@ func GeoRangeIsInclusive(b *BucketOptions) error {
 func Time(b *BucketOptions) error {
 	b.time = true
 	return nil
+}
+
+func Dims(dims int) func(*BucketOptions) error {
+	return func(b *BucketOptions) error {
+		b.dims = dims
+		return nil
+	}
 }
 
 func BTreeDegree(degree int) func(*BucketOptions) error {
@@ -63,6 +71,8 @@ func (b *BucketOptions) bucketOptionsCreateStmt() []byte {
 	cbuf = append(cbuf, strconv.Itoa(boolToInt(b.georincl))...)
 	cbuf = append(cbuf, ':')
 	cbuf = append(cbuf, strconv.Itoa(boolToInt(b.time))...)
+	cbuf = append(cbuf, ':')
+	cbuf = append(cbuf, strconv.Itoa(b.dims)...)
 	return cbuf
 }
 
@@ -87,13 +97,17 @@ func NewBucketOptionsFromStmt(stmt []string) (*BucketOptions, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "error: bucket_optiona: failed to parse bucket options")
 	}
+	dims, err := strconv.ParseInt(stmt[6], 10, 64)
+	if err != nil {
+		return nil, errors.Annotate(err, "error: bucket_optiona: failed to parse bucket options")
+	}
 	opts := &BucketOptions{
 		btdeg:    int(btdeg),
 		system:   system,
 		geo:      geo,
 		georincl: georincl,
 		time:     time,
-		//tol:      tol,
+		dims:     int(dims),
 	}
 	return opts, nil
 }

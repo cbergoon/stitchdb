@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/cbergoon/btree"
+	"github.com/dhconnelly/rtreego"
 	"github.com/juju/errors"
 )
 
@@ -345,4 +346,40 @@ func (t *Tx) Size(index string) (int, error) {
 	} else {
 		return t.bkt.data.Len(), nil
 	}
+}
+
+func (t *Tx) SearchIntersect(bb *rtreego.Rect, filters ...rtreego.Filter) ([]*Entry, error) {
+	var res []*Entry
+	e := t.bkt.rtree.SearchIntersect(bb, filters...)
+	for _, s := range e {
+		res = append(res, s.(*Entry))
+	}
+	return res, nil
+}
+
+func (t *Tx) SearchIntersectWithLimit(k int, bb *rtreego.Rect) ([]*Entry, error) {
+	var res []*Entry
+	e := t.bkt.rtree.SearchIntersectWithLimit(k, bb)
+	for _, s := range e {
+		res = append(res, s.(*Entry))
+	}
+	return res, nil
+}
+
+func (t *Tx) NearestNeighbor(p rtreego.Point) (*Entry, error) {
+	e := t.bkt.rtree.NearestNeighbor(p)
+	return e.(*Entry), nil
+}
+
+func (t *Tx) NearestNeighbors(k int, p rtreego.Point, filters ...rtreego.Filter) ([]*Entry, error) {
+	var res []*Entry
+	e := t.bkt.rtree.NearestNeighbors(k, p, filters...)
+	for _, s := range e {
+		res = append(res, s.(*Entry))
+	}
+	return res, nil
+}
+
+func (t *Tx) GetAllBoundingBoxes() ([]*rtreego.Rect, error) {
+	return t.bkt.rtree.GetAllBoundingBoxes(), nil
 }

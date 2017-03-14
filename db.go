@@ -73,7 +73,7 @@ func (db *StitchDB) readConfigFileBuckets() (map[string][]string, error) {
 
 func parseStmtTypeName(stmt string) (string, []string, error) {
 	parts := strings.Split(stmt, ":")
-	if len(parts) == 7 && parts[0] == "CREATE" {
+	if len(parts) == 8 && parts[0] == "CREATE" {
 		return strings.TrimSpace(parts[1]), parts[1:], nil
 	} else if len(parts) == 2 && parts[0] == "DROP" {
 		return strings.TrimSpace(parts[1]), nil, nil
