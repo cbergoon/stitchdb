@@ -349,6 +349,7 @@ func (t *Tx) Size(index string) (int, error) {
 }
 
 func (t *Tx) SearchIntersect(bb *rtreego.Rect, filters ...rtreego.Filter) ([]*Entry, error) {
+	//Todo: checks for if geo
 	var res []*Entry
 	e := t.bkt.rtree.SearchIntersect(bb, filters...)
 	for _, s := range e {
@@ -358,6 +359,7 @@ func (t *Tx) SearchIntersect(bb *rtreego.Rect, filters ...rtreego.Filter) ([]*En
 }
 
 func (t *Tx) SearchIntersectWithLimit(k int, bb *rtreego.Rect) ([]*Entry, error) {
+	//Todo: checks for if geo
 	var res []*Entry
 	e := t.bkt.rtree.SearchIntersectWithLimit(k, bb)
 	for _, s := range e {
@@ -367,11 +369,13 @@ func (t *Tx) SearchIntersectWithLimit(k int, bb *rtreego.Rect) ([]*Entry, error)
 }
 
 func (t *Tx) NearestNeighbor(p rtreego.Point) (*Entry, error) {
+	//Todo: checks for if geo
 	e := t.bkt.rtree.NearestNeighbor(p)
 	return e.(*Entry), nil
 }
 
 func (t *Tx) NearestNeighbors(k int, p rtreego.Point, filters ...rtreego.Filter) ([]*Entry, error) {
+	//Todo: checks for if geo
 	var res []*Entry
 	e := t.bkt.rtree.NearestNeighbors(k, p, filters...)
 	for _, s := range e {
@@ -381,5 +385,6 @@ func (t *Tx) NearestNeighbors(k int, p rtreego.Point, filters ...rtreego.Filter)
 }
 
 func (t *Tx) GetAllBoundingBoxes() ([]*rtreego.Rect, error) {
+	//Todo: checks for if geo
 	return t.bkt.rtree.GetAllBoundingBoxes(), nil
 }
