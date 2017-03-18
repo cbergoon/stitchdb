@@ -1,4 +1,4 @@
-package main
+package stitchdb
 
 import (
 	"strings"
@@ -350,35 +350,25 @@ func (t *Tx) Size(index string) (int, error) {
 	}
 }
 
-func (t *Tx) SearchIntersect(bb *rtreego.Rect, filters ...rtreego.Filter) ([]*Entry, error) {
+func (t *Tx) SearchIntersect(rbb *Rect) ([]*Entry, error) {
 	if !t.bkt.options.geo {
 		return nil, errors.New("error: tx: bucket is not geo")
 	}
+	bb, _ := rtreegoRect(rbb)
 	var res []*Entry
-	e := t.bkt.rtree.SearchIntersect(bb, filters...)
+	e := t.bkt.rtree.SearchIntersect(bb, nil)
 	for _, s := range e {
 		res = append(res, s.(*Entry))
 	}
 	return res, nil
 }
 
-//func (t *Tx) SearchIntersectWithLimit(k int, bb *rtreego.Rect) ([]*Entry, error) {
-//	if !t.bkt.options.geo {
-//		return nil, errors.New("error: tx: bucket is not geo")
-//	}
-//	var res []*Entry
-//	e := t.bkt.rtree.SearchIntersectWithLimit(k, bb)
-//	for _, s := range e {
-//		res = append(res, s.(*Entry))
-//	}
-//	return res, nil
-//}
-
-func (t *Tx) SearchWithinRadius(p rtreego.Point, radius float64) ([]*Entry, error) {
+func (t *Tx) SearchWithinRadius(pt Point, radius float64) ([]*Entry, error) {
 	//if len(p) != t.bkt.options.dims {
 	//	fmt.Println(t.bkt.options.dims)
 	//	return nil, errors.New("error: tx: invalid dimension for bucket")
 	//}
+	p := rtreegoPoint(pt)
 	d := 2 * radius
 	var dls []float64
 	for i := 0; i < len(p); i++ {
@@ -408,7 +398,6 @@ func (t *Tx) SearchWithinRadius(p rtreego.Point, radius float64) ([]*Entry, erro
 			for i := 0; i < len(xpmod); i++ {
 				dsub = dsub + ((midp[i] - xpmod[i]) * (midp[i] - xpmod[i]))
 			}
-			//d = math.Sqrt(dsub)
 			d = math.Sqrt(dsub)
 			if d < r {
 				return false, false
@@ -427,7 +416,8 @@ func (t *Tx) SearchWithinRadius(p rtreego.Point, radius float64) ([]*Entry, erro
 	return res, nil
 }
 
-func (t *Tx) NearestNeighbor(p rtreego.Point) (*Entry, error) {
+func (t *Tx) NearestNeighbor(pt Point) (*Entry, error) {
+	p := rtreegoPoint(pt)
 	if !t.bkt.options.geo {
 		return nil, errors.New("error: tx: bucket is not geo")
 	}
@@ -435,12 +425,13 @@ func (t *Tx) NearestNeighbor(p rtreego.Point) (*Entry, error) {
 	return e.(*Entry), nil
 }
 
-func (t *Tx) NearestNeighbors(k int, p rtreego.Point, filters ...rtreego.Filter) ([]*Entry, error) {
+func (t *Tx) NearestNeighbors(k int, pt Point) ([]*Entry, error) {
 	if !t.bkt.options.geo {
 		return nil, errors.New("error: tx: bucket is not geo")
 	}
+	p := rtreegoPoint(pt)
 	var res []*Entry
-	e := t.bkt.rtree.NearestNeighbors(k, p, filters...)
+	e := t.bkt.rtree.NearestNeighbors(k, p, nil)
 	for _, s := range e {
 		res = append(res, s.(*Entry))
 	}

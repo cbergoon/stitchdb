@@ -1,4 +1,4 @@
-package main
+package stitchdb
 
 func boolToInt(b bool) int {
 	if b {
