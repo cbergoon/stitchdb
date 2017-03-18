@@ -356,7 +356,7 @@ func (t *Tx) SearchIntersect(rbb *Rect) ([]*Entry, error) {
 	}
 	bb, _ := rtreegoRect(rbb)
 	var res []*Entry
-	e := t.bkt.rtree.SearchIntersect(bb, nil)
+	e := t.bkt.rtree.SearchIntersect(bb)
 	for _, s := range e {
 		res = append(res, s.(*Entry))
 	}
@@ -431,16 +431,9 @@ func (t *Tx) NearestNeighbors(k int, pt Point) ([]*Entry, error) {
 	}
 	p := rtreegoPoint(pt)
 	var res []*Entry
-	e := t.bkt.rtree.NearestNeighbors(k, p, nil)
+	e := t.bkt.rtree.NearestNeighbors(k, p3d)
 	for _, s := range e {
 		res = append(res, s.(*Entry))
 	}
 	return res, nil
-}
-
-func (t *Tx) GetAllBoundingBoxes() ([]*rtreego.Rect, error) {
-	if !t.bkt.options.geo {
-		return nil, errors.New("error: tx: bucket is not geo")
-	}
-	return t.bkt.rtree.GetAllBoundingBoxes(), nil
 }
