@@ -3,6 +3,8 @@ package main
 import (
 	"strings"
 
+	"math"
+
 	"github.com/cbergoon/btree"
 	"github.com/dhconnelly/rtreego"
 	"github.com/juju/errors"
@@ -349,7 +351,9 @@ func (t *Tx) Size(index string) (int, error) {
 }
 
 func (t *Tx) SearchIntersect(bb *rtreego.Rect, filters ...rtreego.Filter) ([]*Entry, error) {
-	//Todo: checks for if geo
+	if !t.bkt.options.geo {
+		return nil, errors.New("error: tx: bucket is not geo")
+	}
 	var res []*Entry
 	e := t.bkt.rtree.SearchIntersect(bb, filters...)
 	for _, s := range e {
@@ -358,10 +362,65 @@ func (t *Tx) SearchIntersect(bb *rtreego.Rect, filters ...rtreego.Filter) ([]*En
 	return res, nil
 }
 
-func (t *Tx) SearchIntersectWithLimit(k int, bb *rtreego.Rect) ([]*Entry, error) {
-	//Todo: checks for if geo
+//func (t *Tx) SearchIntersectWithLimit(k int, bb *rtreego.Rect) ([]*Entry, error) {
+//	if !t.bkt.options.geo {
+//		return nil, errors.New("error: tx: bucket is not geo")
+//	}
+//	var res []*Entry
+//	e := t.bkt.rtree.SearchIntersectWithLimit(k, bb)
+//	for _, s := range e {
+//		res = append(res, s.(*Entry))
+//	}
+//	return res, nil
+//}
+
+func (t *Tx) SearchWithinRadius(p rtreego.Point, radius float64) ([]*Entry, error) {
+	//if len(p) != t.bkt.options.dims {
+	//	fmt.Println(t.bkt.options.dims)
+	//	return nil, errors.New("error: tx: invalid dimension for bucket")
+	//}
+	d := 2 * radius
+	var dls []float64
+	for i := 0; i < len(p); i++ {
+		dls = append(dls, d)
+	}
+	var pmod rtreego.Point
+	for i := 0; i < len(p); i++ {
+		pmod = append(pmod, p[i]-radius)
+	}
+	rrect, _ := rtreego.NewRect(pmod, dls)
+	radiusFilter := func(xp rtreego.Point, r float64) func(results []rtreego.Spatial, object rtreego.Spatial) (refuse, abort bool) {
+		return func(results []rtreego.Spatial, object rtreego.Spatial) (refuse, abort bool) {
+			var xpmod rtreego.Point
+			for i := 0; i < len(xp); i++ {
+				xpmod = append(xpmod, xp[i]+radius)
+			}
+			entry := object.(*Entry)
+			if len(xpmod) != len(entry.location) {
+				return true, true
+			}
+			var midp rtreego.Point
+			midp = entry.location
+			//for i := 0; i < len(entry.location); i++ {
+			//	midp = append(midp, entry.location[i]/2)
+			//}
+			var dsub, d float64
+			for i := 0; i < len(xpmod); i++ {
+				dsub = dsub + ((midp[i] - xpmod[i]) * (midp[i] - xpmod[i]))
+			}
+			//d = math.Sqrt(dsub)
+			d = math.Sqrt(dsub)
+			if d < r {
+				return false, false
+			} else if d == r {
+				return !t.bkt.options.georincl, false
+			} else {
+				return true, false
+			}
+		}
+	}
+	e := t.bkt.rtree.SearchIntersect(rrect, radiusFilter(pmod, radius))
 	var res []*Entry
-	e := t.bkt.rtree.SearchIntersectWithLimit(k, bb)
 	for _, s := range e {
 		res = append(res, s.(*Entry))
 	}
@@ -369,13 +428,17 @@ func (t *Tx) SearchIntersectWithLimit(k int, bb *rtreego.Rect) ([]*Entry, error)
 }
 
 func (t *Tx) NearestNeighbor(p rtreego.Point) (*Entry, error) {
-	//Todo: checks for if geo
+	if !t.bkt.options.geo {
+		return nil, errors.New("error: tx: bucket is not geo")
+	}
 	e := t.bkt.rtree.NearestNeighbor(p)
 	return e.(*Entry), nil
 }
 
 func (t *Tx) NearestNeighbors(k int, p rtreego.Point, filters ...rtreego.Filter) ([]*Entry, error) {
-	//Todo: checks for if geo
+	if !t.bkt.options.geo {
+		return nil, errors.New("error: tx: bucket is not geo")
+	}
 	var res []*Entry
 	e := t.bkt.rtree.NearestNeighbors(k, p, filters...)
 	for _, s := range e {
@@ -385,6 +448,8 @@ func (t *Tx) NearestNeighbors(k int, p rtreego.Point, filters ...rtreego.Filter)
 }
 
 func (t *Tx) GetAllBoundingBoxes() ([]*rtreego.Rect, error) {
-	//Todo: checks for if geo
+	if !t.bkt.options.geo {
+		return nil, errors.New("error: tx: bucket is not geo")
+	}
 	return t.bkt.rtree.GetAllBoundingBoxes(), nil
 }
