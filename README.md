@@ -126,6 +126,6 @@ go run <filename>.go
   
 ### License 
 
-This project is licensed un the GNU LESSER GENERAL PUBLIC LICENSE. See the [LICENSE](https://github.com/cbergoon/stitchdb/blob/master/LICENSE) file. 
+This project is licensed un the GNU Lesser General Public License. See the [LICENSE](https://github.com/cbergoon/stitchdb/blob/master/LICENSE) file. 
 
 For license information on included libraries see [LICENSE-3RD-PARTY](https://github.com/cbergoon/stitchdb/blob/master/LICENSE-3RD=PARTY) file. 
