@@ -1,7 +1,7 @@
-## Stitchd
+## StitchDB
 Yet another key value store - a work in progress...
 
-Stitchd's API is inspired by tidwall/buntdb and boltdb/bolt and makes use of their elegant API design. Stitchd strives 
+StitchDB's API is inspired by tidwall/buntdb and boltdb/bolt and makes use of their elegant API design. StitchDB strives 
 to add a feature set that is tailored to a high throughput and less rigidly persistent use case with seamless geolocation support. 
 
 This has also been a great way to dive deeper into the KV DB world and understand the problems and some of the solutions that 
@@ -9,7 +9,7 @@ are currently employed to mitigate those challenges. Hopefully, others will find
 then to learn something from. 
 
 ### Goals
-Stitchd was born out of a need to replace a legacy timeseries/geolocation package with a more robust real-time solution 
+StitchDB was born out of a need to replace a legacy timeseries/geolocation package with a more robust real-time solution 
 that could standalone as a separate service with little work. It needed to have separation of data or buckets, searchable 
 indexes, invalidation, expiration and, custom event callbacks. Additionally, we wanted the operation and code to remain as
 light weight and manipulable as possible.
@@ -24,25 +24,36 @@ light weight and manipulable as possible.
  
 ### Documentation
 
+API documentation is available at [stitchdb Godoc](https://godoc.org/github.com/cbergoon/stitchdb)
+
 The Wiki is full of explanations and examples:
 
-[https://github.com/cbergoon/Stitchd/wiki](https://github.com/cbergoon/Stitchd/wiki)
+[https://github.com/cbergoon/stitchdb/wiki](https://github.com/cbergoon/stitchdb/wiki)
 
 API documentation is available at:
 
-[http://godoc.org/cbergoon/stitchd](http://godoc.org/cbergoon/stitchd)
+[http://godoc.org/cbergoon/stitchdb](http://godoc.org/cbergoon/stitchdb)
 
-Find some other writings about the use case and design of Stitchd below:
+Find some other writings about the use case and design of StitchDB below:
 
-[http://cbergoon.github.io/stitchd/a1](http://cbergoon.github.io/stitchd/a1)
-[http://cbergoon.github.io/stitchd/a2](http://cbergoon.github.io/stitchd/a2) 
+[http://cbergoon.github.io/stitchdb/a1](http://cbergoon.github.io/stitchdb/a1)
+[http://cbergoon.github.io/stitchdb/a2](http://cbergoon.github.io/stitchdb/a2) 
 
 ### Usage
 
-There are more extensive examples and how-to's in the resources above but to get your feet wet all you need to do is install Stitchd with: 
+There are more complete examples and how-to's in the resources above but to get started all you need to do is install StitchDB. 
+
+First install the required dependncies: 
+
+```bash
+go get github.com/cbergoon/btree
+go get github.com/tidwall/gjson
+go get github.com/dhconnelly/rtreego
+go get github.com/juju/errors
+```
 
 ```bash 
-go get github.com/cbergoon/stitchd
+go get github.com/cbergoon/StitchDB
 ```
 
 Here is some boiler plate code to get started with:  
@@ -51,13 +62,56 @@ Here is some boiler plate code to get started with:
 package main
 
 import (
-        "fmt"
-        
-        "github.com/cbergoon/stitchd"
+	"fmt"
+	"strconv"
+	"time"
+
+	"github.com/cbergoon/stitchdb"
 )
 
-func main(){
-        //Todo: Finish the example
+func main() {
+
+	c, _ := stitchdb.NewConfig(stitchdb.Persist, stitchdb.DirPath("path/to/loc/"), stitchdb.Sync(stitchdb.MNGFREQ), stitchdb.ManageFrequency(1*time.Second), stitchdb.Developer, stitchdb.PerformanceMonitor, stitchdb.BucketFileMultLimit(10))
+	s, _ := stitchdb.NewStitchDB(c)
+
+	s.Open()
+
+	opts, _ := stitchdb.NewBucketOptions(stitchdb.BTreeDegree(32), stitchdb.Geo)
+	s.CreateBucket("test", opts)
+
+	s.Update("test", func(t *stitchdb.Tx) error {
+		t.CreateIndex("user", stitchdb.INT_INDEX)
+		for i := 0; i < 10; i++ {
+			eopt, _ := stitchdb.NewEntryOptions()
+			e, _ := stitchdb.NewEntry("k"+strconv.Itoa(i), "{ \"user\":\""+strconv.Itoa(10-i)+"\", \"coords\": ["+strconv.Itoa(i)+", 3.0]}", true, eopt)
+			t.Set(e)
+		}
+		return nil
+	})
+
+	s.View("test", func(t *stitchdb.Tx) error {
+		sz, _ := t.Size("")
+		fmt.Println("Size: ", sz)
+
+		t.Ascend("", func(e *stitchdb.Entry) bool {
+			fmt.Println("Ascend Entries: ", e)
+			return true
+		})
+		rect, _ := stitchdb.NewRect(stitchdb.Point{0.0, 0.0}, []float64{10, 10})
+		fmt.Print("Nearest Neighbor: ")
+		fmt.Print(t.NearestNeighbor(stitchdb.Point{5.2, 3.0}))
+		fmt.Print("\n")
+		fmt.Print("Search Within Radius: ")
+		fmt.Print(t.SearchWithinRadius(stitchdb.Point{0.0, 0.0}, 5))
+		fmt.Print("\n")
+		fmt.Print("Search Intersect: ")
+		fmt.Print(t.SearchIntersect(rect))
+		fmt.Print("\n")
+		return nil
+	})
+
+	time.Sleep(time.Second * 4)
+	s.Close()
 }
 
 ```
@@ -66,10 +120,12 @@ Then run it with:
 ```bash
 go run <filename>.go
 ```
-### Other Stitchd Projects
-* [Stitchd-beacon](https://github.com/cbergoon/Stitchd-beacon) - Builds a HTTP API and RPC networking layer over Stitchd allowing it to operate as a standalone service.
-* [Stitchd-raft](https://github.com/cbergoon/Stitchd-raft) - An distributed and consistent service that adds RAFT to Stitchd-beacon (work in progress name).
+### Other StitchDB Projects
+* [stitchdb-beacon](https://github.com/cbergoon/stitchdb-beacon) - Builds a HTTP API and RPC networking layer over StitchDB allowing it to operate as a standalone service.
+* [stitchdb-raft](https://github.com/cbergoon/stitchdb-raft) - An distributed and consistent service that adds RAFT to StitchDB-beacon (work in progress name).
   
-### Todo
-1. 
-2.
+### License 
+
+This project is licensed un the GNU LESSER GENERAL PUBLIC LICENSE. See the [LICENSE](https://github.com/cbergoon/stitchdb/blob/master/LICENSE) file. 
+
+For license information on included libraries see [LICENSE-3RD-PARTY](https://github.com/cbergoon/stitchdb/blob/master/LICENSE-3RD=PARTY) file. 

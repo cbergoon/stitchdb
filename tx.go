@@ -1,3 +1,6 @@
+// Copyright 2017 Cameron Bergoon
+// Licensed under the LGPLv3, see LICENCE file for details.
+
 package stitchdb
 
 import (
@@ -431,7 +434,7 @@ func (t *Tx) NearestNeighbors(k int, pt Point) ([]*Entry, error) {
 	}
 	p := rtreegoPoint(pt)
 	var res []*Entry
-	e := t.bkt.rtree.NearestNeighbors(k, p3d)
+	e := t.bkt.rtree.NearestNeighbors(k, p)
 	for _, s := range e {
 		res = append(res, s.(*Entry))
 	}

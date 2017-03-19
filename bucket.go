@@ -1,15 +1,17 @@
+// Copyright 2017 Cameron Bergoon
+// Licensed under the LGPLv3, see LICENCE file for details.
+
 package stitchdb
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-
-	"fmt"
 
 	"github.com/cbergoon/btree"
 	"github.com/dhconnelly/rtreego"
