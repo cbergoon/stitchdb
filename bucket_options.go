@@ -114,11 +114,3 @@ func NewBucketOptionsFromStmt(stmt []string) (*BucketOptions, error) {
 	}
 	return opts, nil
 }
-
-//On eviction Function Move to Item
-//On invalidation Function Move to Item
-//Is Geo?
-//On Geo Beacon is in Target Range Function Move to Item
-//Geo Range is inclusive?
-//Time series?
-//Is System Bucket?

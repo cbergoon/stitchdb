@@ -14,41 +14,44 @@ import (
 )
 
 type RbCtx struct {
-	backward      map[string]*Entry
-	forward       map[string]*Entry
+	//Holds the backward changes made during the transaction. Keys with a nil value were inserted
+	//during the transaction and should be deleted. Keys with a non-nil value were deleted
+	//during the transaction and should be inserted.
+	backward map[string]*Entry
+	//Holds the backward index changes made during the transaction. Keys with a nil value were created
+	//and need to be deleted on rollback. Keys with a non-nil value were dropped and need to be replaced
+	//with the value on rollback.
 	backwardIndex map[string]*Index
+	//Holds the forward changes made during the transaction. Keys with a nil value were deleted during
+	//the transaction and should be deleted. Keys with a non-nil value were inserted during the transaction
+	//and should be inserted.
+	forward map[string]*Entry
 }
 
 type Tx struct {
-	db        *StitchDB
-	bkt       *Bucket
-	mode      RWMode
-	rbctx     *RbCtx
-	iterating bool
+	db        *StitchDB //DB that bucket is contained in. See bkt.
+	bkt       *Bucket   //Bucket that the this tx is operating on
+	mode      RWMode    //Describes if tx is read-only or read-write
+	rbctx     *RbCtx    //Context containing changes to bucket
+	iterating bool      //true if iterating over tree; used to prevent effects of updates while iterating.
 }
 
+//NewTx creates a new transaction for the DB and bucket provided with the RW specified modifier.
 func NewTx(db *StitchDB, bkt *Bucket, mode RWMode) (*Tx, error) {
 	return &Tx{
 		db:   db,
 		bkt:  bkt,
 		mode: mode,
 		rbctx: &RbCtx{
-			//Holds the backward changes made during the transaction. Keys with a nil value were inserted
-			//during the transaction and should be deleted. Keys with a non-nil value were deleted
-			//during the transaction and should be inserted.
-			backward: make(map[string]*Entry),
-			//Holds the backward index changes made during the transaction. Keys with a nil value were created
-			//and need to be deleted on rollback. Keys with a non-nil value were dropped and need to be replaced
-			//with the value on rollback.
-			backwardIndex: make(map[string]*Index),
-			//Holds the forward changes made during the transaction. Keys with a nil value were deleted during
-			//the transaction and should be deleted. Keys with a non-nil value were inserted during the transaction
-			//and should be inserted.
-			forward: make(map[string]*Entry),
+			backward:      make(map[string]*Entry), //Changes to main tree during tx to rollback (backward).
+			backwardIndex: make(map[string]*Index), //Changes to the index trees during tx to rollback (backward).
+			forward:       make(map[string]*Entry), //Changes to main tree during tx to commit (forward).
 		},
 	}, nil
 }
 
+//RollbackTx iterates over backward changes stored in rollback context rbctx and returns the bucket to a state
+//equivalent to the state of the bucket pre-transaction.
 func (t *Tx) RollbackTx() error {
 	for key, entry := range t.rbctx.backward {
 		if entry == nil { //Entry was inserted during transaction; delete
@@ -67,6 +70,7 @@ func (t *Tx) RollbackTx() error {
 	return nil
 }
 
+//CommitTx iterates over forward changes to the bucket and persists changes to the AOF.
 func (t *Tx) CommitTx() error {
 	if !t.db.open {
 		return errors.New("error: tx: db is closed")
@@ -88,6 +92,7 @@ func (t *Tx) CommitTx() error {
 	return nil
 }
 
+//lock is a helper function to obtain a lock on the bucket appropriately based on the RW modifier of the transaction.
 func (t *Tx) lock() {
 	if t.mode == MODE_READ {
 		t.bkt.bktlock.RLock()
@@ -96,6 +101,7 @@ func (t *Tx) lock() {
 	}
 }
 
+//unlock is a helper function to release the lock on the bucket appropriately based on the RW modifier of the transaction.
 func (t *Tx) unlock() {
 	if t.mode == MODE_READ {
 		t.bkt.bktlock.RUnlock()
@@ -104,10 +110,13 @@ func (t *Tx) unlock() {
 	}
 }
 
+//setIterating sets the iterating flag to the specified value.
 func (t *Tx) setIterating(i bool) {
 	t.iterating = i
 }
 
+//Ascend iterates over the items in the bucket using the specified index for each item calling the provided function f
+//terminating only when there are no more entries in the bucket or the provided function returns false.
 func (t *Tx) Ascend(index string, f func(e *Entry) bool) error {
 	i := func(i btree.Item) bool {
 		eItem := i.(*Entry)
@@ -123,6 +132,10 @@ func (t *Tx) Ascend(index string, f func(e *Entry) bool) error {
 	return nil
 }
 
+//Ascend iterates over the items in the bucket using the specified index for each item greater than or equal to the
+//pivot entry calling the provided function f terminating only when there are no more entries in the bucket or the
+//provided function returns false.
+//Note: only the portion of the entry that the index is built with needs to be populated.
 func (t *Tx) AscendGreaterOrEqual(index string, pivot *Entry, f func(e *Entry) bool) error {
 	i := func(i btree.Item) bool {
 		eItem := i.(*Entry)
@@ -138,6 +151,10 @@ func (t *Tx) AscendGreaterOrEqual(index string, pivot *Entry, f func(e *Entry) b
 	return nil
 }
 
+//Ascend iterates over the items in the bucket using the specified index for each item less than the pivot entry
+//calling the provided function f terminating only when there are no more entries in the bucket or the provided function
+//returns false.
+//Note: only the portion of the entry that the index is built with needs to be populated.
 func (t *Tx) AscendLessThan(index string, pivot *Entry, f func(e *Entry) bool) error {
 	i := func(i btree.Item) bool {
 		eItem := i.(*Entry)
