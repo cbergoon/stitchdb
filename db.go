@@ -15,11 +15,12 @@ import (
 )
 
 const (
-	BUCKET_CONFIG_FILE        string = "sbkt.conf"
-	BUCKET_FILE_EXTENSION     string = ".stitch"
-	BUCKET_TMP_FILE_EXTENSION string = ".stitch.tmp"
+	BUCKET_CONFIG_FILE        string = "sbkt.conf"   //Main DB AOF
+	BUCKET_FILE_EXTENSION     string = ".stitch"     //Bucket AOF file extension
+	BUCKET_TMP_FILE_EXTENSION string = ".stitch.tmp" //Bucket AOF file extension used when replacing file
 )
 
+//StitchDB represents the database object. All operations on the database originate from this object.
 type StitchDB struct {
 	config    *Config
 	dblock    sync.RWMutex
@@ -30,6 +31,8 @@ type StitchDB struct {
 	bktcfgfrc int
 }
 
+//NewStitchDB returns a new StitchDB with the specified configuration. Note: this function only creates the representation
+//of the DB and does not open or start the db.
 func NewStitchDB(config *Config) (*StitchDB, error) {
 	stitch := &StitchDB{
 		config:  config,
@@ -47,6 +50,8 @@ func NewStitchDB(config *Config) (*StitchDB, error) {
 	return stitch, nil
 }
 
+//readConfigFileBuckets opens/creates/reads the BUCKET_CONFIG_FILE into a modified map representation of the file. Returns
+//a map[string][]string with key equal to names of the buckets and values representing the remaining statement.
 func (db *StitchDB) readConfigFileBuckets() (map[string][]string, error) {
 	lines := make([]string, 0)
 	var err error
@@ -59,7 +64,6 @@ func (db *StitchDB) readConfigFileBuckets() (map[string][]string, error) {
 		lines = append(lines, scanner.Text())
 		db.bktcfgfrc++
 	}
-	// check for errors
 	if err = scanner.Err(); err != nil {
 		return nil, err
 	}
@@ -74,6 +78,8 @@ func (db *StitchDB) readConfigFileBuckets() (map[string][]string, error) {
 	return stmtMap, nil
 }
 
+//parseStmtTypeName given a bucket statement returns the name of the bucket and a slice of strings containing the parts
+//of the statement.
 func parseStmtTypeName(stmt string) (string, []string, error) {
 	parts := strings.Split(stmt, ":")
 	if len(parts) == 8 && parts[0] == "CREATE" {
@@ -85,10 +91,14 @@ func parseStmtTypeName(stmt string) (string, []string, error) {
 	}
 }
 
+//getDBFilePath builds the path to the StitchDB resource at the specified base directory.
 func (db *StitchDB) getDBFilePath(fileName string) string {
 	return strings.TrimSpace(db.config.dirPath) + strings.TrimSpace(fileName)
 }
 
+//Open initializes the db for use and starts the manager routine. Open opens/creates the main db append only file, parses
+//the statements within, creates the buckets stored in the file, and opens each bucket. Returns an error if the process was
+//not able to create the directory, failed to read the stitch db
 func (db *StitchDB) Open() error {
 	db.lock(MODE_READ_WRITE)
 	defer db.unlock(MODE_READ_WRITE)
@@ -117,6 +127,8 @@ func (db *StitchDB) Open() error {
 	return nil
 }
 
+//Close closes each bucket including system, flushes bucket config file, and closes the file. Waits until all bucket
+//managers have exited.
 func (db *StitchDB) Close() error {
 	db.lock(MODE_READ_WRITE)
 	defer db.unlock(MODE_READ_WRITE)
@@ -150,6 +162,8 @@ func (db *StitchDB) Close() error {
 	return nil
 }
 
+//runManager is the main manager loop for the database manager. Writes entries to AOF, compaction, and file flushes.
+//runManager also starts bucket managers for each bucket in the db.
 func (db *StitchDB) runManager() error {
 	go func() {
 		mngct := time.NewTicker(db.config.manageFrequency)
@@ -210,18 +224,21 @@ func (db *StitchDB) runManager() error {
 	return nil
 }
 
+//GetConfig returns a the configuration for the db.
 func (db *StitchDB) GetConfig() *Config {
 	db.lock(MODE_READ)
 	defer db.unlock(MODE_READ)
 	return db.config
 }
 
+//SetConfig sets the configuration for the db.
 func (db *StitchDB) SetConfig(config *Config) {
 	db.lock(MODE_READ_WRITE)
 	defer db.unlock(MODE_READ_WRITE)
 	db.config = config
 }
 
+//getBucket returns the bucket with the provided name. Returns an error if the bucket name is invalid.
 func (db *StitchDB) getBucket(name string) (*Bucket, error) {
 	var b *Bucket
 	var ok bool
@@ -237,6 +254,9 @@ func (db *StitchDB) getBucket(name string) (*Bucket, error) {
 	return b, nil
 }
 
+//View creates a read only transaction and passes the open transaction to the provided function. The created transaction
+//will provide read only access to the bucket specified by the bucket name provided. Returns an error if the db is closed
+//or the bucket is invalid.
 func (db *StitchDB) View(bucket string, f func(t *Tx) error) error {
 	db.lock(MODE_READ)
 	defer db.unlock(MODE_READ)
@@ -254,6 +274,9 @@ func (db *StitchDB) View(bucket string, f func(t *Tx) error) error {
 	return err
 }
 
+//Update creates a read only transaction and passes the open transaction to the provided function. The created transaction
+//will provide read/write access to the bucket specified by the bucket name provided. Returns an error if the db is closed
+//or the bucket is invalid.
 func (db *StitchDB) Update(bucket string, f func(t *Tx) error) error {
 	db.lock(MODE_READ)
 	defer db.unlock(MODE_READ)
@@ -271,6 +294,7 @@ func (db *StitchDB) Update(bucket string, f func(t *Tx) error) error {
 	return err
 }
 
+//CreateBucket creates and opens a new bucket.
 func (db *StitchDB) CreateBucket(name string, options *BucketOptions) error {
 	db.lock(MODE_READ_WRITE)
 	defer db.unlock(MODE_READ_WRITE)
@@ -317,6 +341,7 @@ func (db *StitchDB) CreateBucket(name string, options *BucketOptions) error {
 	return nil
 }
 
+//DropBucket closes bucket and removes the bucket from the db.
 func (db *StitchDB) DropBucket(name string) error {
 	db.lock(MODE_READ_WRITE)
 	defer db.unlock(MODE_READ_WRITE)
@@ -349,6 +374,7 @@ func (db *StitchDB) DropBucket(name string) error {
 	return nil
 }
 
+//lock is a helper function to obtain a lock on the db appropriately based on the RW modifier of the transaction.
 func (db *StitchDB) lock(mode RWMode) {
 	if mode == MODE_READ {
 		db.dblock.RLock()
@@ -357,6 +383,7 @@ func (db *StitchDB) lock(mode RWMode) {
 	}
 }
 
+//unlock is a helper function to release the lock on the db appropriately based on the RW modifier of the transaction.
 func (db *StitchDB) unlock(mode RWMode) {
 	if mode == MODE_READ {
 		db.dblock.RUnlock()

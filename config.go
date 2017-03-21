@@ -9,12 +9,13 @@ import (
 	"github.com/juju/errors"
 )
 
+//IOFrequency represents the frequency in which management operations will be executed.
 type IOFrequency int
 
 const (
-	EACH IOFrequency = iota
-	MNGFREQ
-	NONE
+	EACH    IOFrequency = iota //Each Transaction
+	MNGFREQ                    //At Management Frequency
+	NONE                       //Never Execute
 )
 
 type Config struct {

@@ -22,25 +22,27 @@ import (
 const COMPACT_FACTOR int = 10
 
 type Bucket struct {
-	name         string
-	db           *StitchDB
-	bktlock      sync.RWMutex
-	data         *btree.BTree
-	eviction     *btree.BTree
-	invalidation *btree.BTree
-	rtree        *rtreego.Rtree
-	indexes      map[string]*Index
-	file         *os.File
-	rct          uint64
-	open         bool
-	options      *BucketOptions
-	aofbuf       []byte
+	name         string            //Name of the bucket.
+	db           *StitchDB         //Reference to containing DB.
+	bktlock      sync.RWMutex      //Lock for bucket.
+	data         *btree.BTree      //Primary tree for bucket.
+	eviction     *btree.BTree      //Data for bucket ordered by eviction time.
+	invalidation *btree.BTree      //Data for bucket ordered by invalidation time.
+	rtree        *rtreego.Rtree    //Rtree of data for geolocation.
+	indexes      map[string]*Index //Map of indexes built over data.
+	file         *os.File          //Bucket Append Only File.
+	rct          uint64            //AOF row count.
+	open         bool              //Indicated the status of the bucket.
+	options      *BucketOptions    //Options for the bucket.
+	aofbuf       []byte            //AOF write buffer.
 }
 
+//eItype provides a basic context via type for tree iType.
 type eItype struct {
 	db *StitchDB
 }
 
+//iItype provides a basic context via type for tree iType.
 type iItype struct {
 	db *StitchDB
 }

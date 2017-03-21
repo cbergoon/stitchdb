@@ -1,17 +1,19 @@
 ## StitchDB
-Yet another key value store - a work in progress...
+Yet another key value store - StitchDB is an in memory key-value store persisted with an append only log with support for 
+geolocation and time series data. 
 
 StitchDB's API is inspired by tidwall/buntdb and boltdb/bolt and makes use of their elegant API design. StitchDB strives 
-to add a feature set that is tailored to a high throughput and less rigidly persistent use case with seamless geolocation support. 
+to add a feature set that is tailored to a high throughput and less rigidly persistent use case with builtin multidimensional
+geolocation support. 
 
-This has also been a great way to dive deeper into the KV DB world and understand the problems and some of the solutions that 
+This has also been a great way to dive deeper into the key-value store world and understand the problems and some of the solutions that 
 are currently employed to mitigate those challenges. Hopefully, others will find this project useful if not for use in a project, 
 then to learn something from. 
 
 ### Goals
 StitchDB was born out of a need to replace a legacy timeseries/geolocation package with a more robust real-time solution 
-that could standalone as a separate service with little work. It needed to have separation of data or buckets, searchable 
-indexes, invalidation, expiration and, custom event callbacks. Additionally, we wanted the operation and code to remain as
+that could stand alone as a separate service with little work. It needed to have separation of data or buckets, searchable 
+indexes, invalidation, expiration, and custom event callbacks. Additionally, we wanted the operation and code to remain as
 light weight and manipulable as possible.
  
 ### Tradeoffs and Consideraitons
@@ -43,7 +45,7 @@ Find some other writings about the use case and design of StitchDB below:
 
 There are more complete examples and how-to's in the resources above but to get started all you need to do is install StitchDB. 
 
-First install the required dependncies: 
+The dependencies for StitchDB are available by running the following:
 
 ```bash
 go get github.com/cbergoon/btree
@@ -120,10 +122,16 @@ Then run it with:
 ```bash
 go run <filename>.go
 ```
-### Other StitchDB Projects
-* [stitchdb-beacon](https://github.com/cbergoon/stitchdb-beacon) - Builds a HTTP API and RPC networking layer over StitchDB allowing it to operate as a standalone service.
-* [stitchdb-raft](https://github.com/cbergoon/stitchdb-raft) - An distributed and consistent service that adds RAFT to StitchDB-beacon (work in progress name).
-  
+### StitchDB Ecosystem
+* [stitchd](https://github.com/cbergoon/stitchd) - Builds a HTTP and RPC API layer over StitchDB allowing it to operate as a standalone service.
+* [stitchraft](https://github.com/cbergoon/stitchraft) - An distributed and consistent service that adds RAFT to StitchDB-beacon (work in progress name).
+* [stitchql](https://github.com/cbergoon/stitchql) - A query language that interpreter that provides implements a simple language to access/manipulate StitchDB.
+
+### Future Work/Ideas
+* stitchd - Builds a HTTP and RPC API layer over StitchDB allowing it to operate as a standalone service.
+* stitchraft - An distributed and consistent service that adds RAFT to StitchDB-beacon (work in progress name).
+* stitchql - A query language that interpreter that provides implements a simple language to access/manipulate StitchDB.
+
 ### License 
 
 This project is licensed un the GNU Lesser General Public License. See the [LICENSE](https://github.com/cbergoon/stitchdb/blob/master/LICENSE) file. 
