@@ -19,8 +19,10 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-const COMPACT_FACTOR int = 10
+//Todo: Replace with the StitchDB config value.
+const COMPACT_FACTOR int = 10 //Multiplier factor for to determine when to compact log.
 
+//Bucket represents a bucket in the database. Think 'table' but for key-value store.
 type Bucket struct {
 	name         string            //Name of the bucket.
 	db           *StitchDB         //Reference to containing DB.
@@ -47,6 +49,7 @@ type iItype struct {
 	db *StitchDB
 }
 
+//NewBucket creates a new bucket for the specified db with the provided options.
 func NewBucket(db *StitchDB, bucketOptions *BucketOptions, name string) (*Bucket, error) {
 	return &Bucket{
 		name:         name,
@@ -60,6 +63,8 @@ func NewBucket(db *StitchDB, bucketOptions *BucketOptions, name string) (*Bucket
 	}, nil
 }
 
+//loadBucketFile reads the entire bucket file and inserts the entries into the bucket. Populates the main, invalidation,
+//expiration, and index trees.
 func (b *Bucket) loadBucketFile() error {
 	entries := make([]string, 0)
 	r := bufio.NewReader(b.file)
@@ -134,6 +139,7 @@ func (b *Bucket) loadBucketFile() error {
 	return err
 }
 
+//parseEntryStmtTypeName returns the entry name and slice of the remaining parts of the tree.
 func parseEntryStmtTypeName(stmt string) (string, []string, error) {
 	parts := strings.Split(stmt, "~")
 	if parts[0] == "INSERT" || parts[0] == "DELETE" {
@@ -143,8 +149,9 @@ func parseEntryStmtTypeName(stmt string) (string, []string, error) {
 	}
 }
 
-//Called from tx which has a RW lock
-func (b *Bucket) WriteAOFBuf() error {
+//writeAOFBuf writes the db file buffer to disk performing a file sync when if required.
+//Called from tx which has a RW lock.
+func (b *Bucket) writeAOFBuf() error {
 	if b.db.config.persist {
 		if b.db.config.writeFreq == MNGFREQ {
 			if len(b.aofbuf) > 0 {
@@ -168,16 +175,20 @@ func (b *Bucket) WriteAOFBuf() error {
 	return nil
 }
 
-func (b *Bucket) WriteDeleteEntry(e *Entry) {
+//writeDeleteEntry generates and appends an insert entry to the write buffer.
+func (b *Bucket) writeDeleteEntry(e *Entry) {
 	stmt := e.EntryDeleteStmt()
 	b.aofbuf = append(b.aofbuf, stmt...)
 }
 
-func (b *Bucket) WriteInsertEntry(e *Entry) {
+//writeInsertEntry generates and appends a delete entry to the write buffer.
+func (b *Bucket) writeInsertEntry(e *Entry) {
 	stmt := e.EntryInsertStmt()
 	b.aofbuf = append(b.aofbuf, stmt...)
 }
 
+//OpenBucket opens and loads a bucket. It is expected that the manager is started by the caller of this function after
+//bucket is open. Returns an error if the file could not be opened or created or if the bucket file could not be loaded.
 func (b *Bucket) OpenBucket(file string) error {
 	b.lock(MODE_READ_WRITE)
 	defer b.unlock(MODE_READ_WRITE)
@@ -196,6 +207,9 @@ func (b *Bucket) OpenBucket(file string) error {
 	return nil
 }
 
+//Close closes the bucket flushing the write buffer to disk. Performs a sync regardless of frequency setting as it is not
+//guarenteed that the manager will execute again before exiting. Returns an error if the write to the bucket file failed,
+//the file sync failed, or if the file fails to close.
 func (b *Bucket) Close() error {
 	b.lock(MODE_READ_WRITE)
 	defer b.unlock(MODE_READ_WRITE)
@@ -220,6 +234,7 @@ func (b *Bucket) Close() error {
 	return nil
 }
 
+//indexExists returns true if the index exists for the provided index name.
 func (b *Bucket) indexExists(index string) bool {
 	idx, ok := b.indexes[index]
 	if ok && idx != nil {
@@ -228,6 +243,8 @@ func (b *Bucket) indexExists(index string) bool {
 	return false
 }
 
+//get retrieves an entry from the data tree using the default (key) comparator for the entry. It is assumed the the caller
+//obtains a lock on the db.
 func (b *Bucket) get(key *Entry) *Entry {
 	if e := b.data.Get(key); e != nil {
 		return e.(*Entry)
@@ -235,6 +252,8 @@ func (b *Bucket) get(key *Entry) *Entry {
 	return nil
 }
 
+//insert adds an entry to the bucket populating the expries, invalidation, and index trees. It is assumed the the caller
+//obtains a lock on the db.
 func (b *Bucket) insert(entry *Entry) *Entry {
 	var pentry *Entry = nil
 	if p := b.data.ReplaceOrInsert(entry); p != nil {
@@ -280,6 +299,8 @@ func (b *Bucket) insert(entry *Entry) *Entry {
 	return pentry
 }
 
+//delete removes an entry from the bucket if it exists removing from the expires, invalidation, and all index trees. It
+//is assumed the the caller obtains a lock on the db.
 func (b *Bucket) delete(key *Entry) *Entry {
 	var pentry *Entry
 	if p := b.data.Delete(key); p != nil {
@@ -310,7 +331,9 @@ func (b *Bucket) delete(key *Entry) *Entry {
 	return nil
 }
 
-func (b *Bucket) StartTx(mode RWMode) (*Tx, error) {
+//startTx returns a new transaction with the specified RW mode and obtains the lock on the bucket. Returns an error if
+//the db or bucket is closed or if the transactions fails to be created.
+func (b *Bucket) startTx(mode RWMode) (*Tx, error) {
 	if b.db == nil || !b.db.open || b == nil || !b.open {
 		return nil, errors.New("error: bucket: resource is not open")
 	}
@@ -322,8 +345,11 @@ func (b *Bucket) StartTx(mode RWMode) (*Tx, error) {
 	return tx, nil
 }
 
+//handleTx executes the provided function against the transaction. The transaction will be commited if and only if the
+//transaction is a Read/Write transaction and the provided function returns a nil error otherwise the transaction will be
+//rolled back.
 func (b *Bucket) handleTx(mode RWMode, f func(t *Tx) error) error {
-	tx, err := b.StartTx(mode)
+	tx, err := b.startTx(mode)
 	if err != nil {
 		return err
 	}
@@ -345,6 +371,7 @@ func (b *Bucket) handleTx(mode RWMode, f func(t *Tx) error) error {
 	return err
 }
 
+//manager is the main execution loop for the bucket. The manager loop is executed at the specified frequency of the database.
 func (b *Bucket) manager() error {
 	mngct := time.NewTicker(b.db.config.manageFrequency)
 	defer mngct.Stop()
@@ -417,6 +444,7 @@ func (b *Bucket) manager() error {
 	return nil
 }
 
+//compactLog rewrites the log resulting in a condensed form containing only insert/update statements.
 func (b *Bucket) compactLog() error {
 	//open new tmp file
 	var err error
@@ -463,6 +491,7 @@ func (b *Bucket) compactLog() error {
 	return nil
 }
 
+//lock is a helper function to obtain a lock on the bucket appropriately based on the provided RW modifier.
 func (b *Bucket) lock(mode RWMode) {
 	if mode == MODE_READ {
 		b.bktlock.RLock()
@@ -471,6 +500,7 @@ func (b *Bucket) lock(mode RWMode) {
 	}
 }
 
+//unlock is a helper function to release the lock on the bucket appropriately based on the provided RW modifier.
 func (b *Bucket) unlock(mode RWMode) {
 	if mode == MODE_READ {
 		b.bktlock.RUnlock()
@@ -479,6 +509,7 @@ func (b *Bucket) unlock(mode RWMode) {
 	}
 }
 
+//bucketCreateStmt builds the statement representing the provided entry.
 func (b *Bucket) bucketCreateStmt() []byte {
 	var cbuf []byte
 	cbuf = append(cbuf, "CREATE"...)
@@ -489,6 +520,7 @@ func (b *Bucket) bucketCreateStmt() []byte {
 	return append(cbuf, '\n')
 }
 
+//bucketDropStmt builds the statement representing the provided entry.
 func (b *Bucket) bucketDropStmt() []byte {
 	var cbuf []byte
 	cbuf = append(cbuf, "DROP"...)
@@ -497,6 +529,7 @@ func (b *Bucket) bucketDropStmt() []byte {
 	return append(cbuf, '\n')
 }
 
+//NewBucketFromStmt creates a bucket for a given bucket statement.
 func NewBucketFromStmt(db *StitchDB, stmtParts []string) (*Bucket, error) {
 	opts, err := NewBucketOptionsFromStmt(stmtParts)
 	if err != nil {

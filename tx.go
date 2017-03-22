@@ -27,6 +27,7 @@ type RbCtx struct {
 	forward map[string]*Entry
 }
 
+//Tx represents the a transaction including rollback information.
 type Tx struct {
 	db        *StitchDB //DB that bucket is contained in. See bkt.
 	bkt       *Bucket   //Bucket that the this tx is operating on
@@ -80,12 +81,12 @@ func (t *Tx) CommitTx() error {
 	if t.mode == MODE_READ_WRITE {
 		for key, entry := range t.rbctx.forward {
 			if entry == nil { //Entry was deleted or overwritten during transaction; delete/overwrite
-				t.bkt.WriteDeleteEntry(&Entry{k: key})
+				t.bkt.writeDeleteEntry(&Entry{k: key})
 			} else { //Entry was inserted during transaction; insert
-				t.bkt.WriteInsertEntry(entry)
+				t.bkt.writeInsertEntry(entry)
 			}
 		}
-		t.bkt.WriteAOFBuf()
+		t.bkt.writeAOFBuf()
 	}
 	t.unlock()
 	return nil

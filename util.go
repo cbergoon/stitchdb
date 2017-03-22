@@ -3,6 +3,7 @@
 
 package stitchdb
 
+//boolToInt returns an integer representation of a provided bool. Returns 1 for a true value and 0 for a false value.
 func boolToInt(b bool) int {
 	if b {
 		return 1

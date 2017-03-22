@@ -11,14 +11,16 @@ import (
 	"github.com/juju/errors"
 )
 
+//EntryOptions represents the configuration for an entry determining how an entry will function within a bucket.
 type EntryOptions struct {
-	doesExp bool
-	doesInv bool
-	expTime time.Time
-	invTime time.Time
-	tol     float64
+	doesExp bool      //Indicates if the entry will expire at expTime.
+	doesInv bool      //Indicates if the entry will invalidate at invTime.
+	expTime time.Time //Time at which the entry will expire if doesExp is true.
+	invTime time.Time //Time at which the entry will invalidate if doesInv is true.
+	tol     float64   //Tolerance of the entry's geo-location. Used to create a rectangle to insert into rtree.
 }
 
+//ExpireTime sets the time the entry will expire and enables expiration for the entry.
 func ExpireTime(time time.Time) func(*EntryOptions) error {
 	return func(e *EntryOptions) error {
 		e.doesExp = true
@@ -27,6 +29,7 @@ func ExpireTime(time time.Time) func(*EntryOptions) error {
 	}
 }
 
+//InvalidTime sets the time the entry will invalidate and enables invalidation for the entry.
 func InvalidTime(time time.Time) func(*EntryOptions) error {
 	return func(e *EntryOptions) error {
 		e.doesInv = true
@@ -35,6 +38,7 @@ func InvalidTime(time time.Time) func(*EntryOptions) error {
 	}
 }
 
+//Sets the tolerance (accuracy) of the geo-location for the entry primarily used to build the rtree.
 func Tol(t float64) func(*EntryOptions) error {
 	return func(e *EntryOptions) error {
 		e.tol = t
@@ -42,6 +46,7 @@ func Tol(t float64) func(*EntryOptions) error {
 	}
 }
 
+//NewEntryOptions creates a new entry using the provided option modifiers.
 func NewEntryOptions(options ...func(*EntryOptions) error) (*EntryOptions, error) {
 	c := &EntryOptions{}
 	for _, option := range options {
@@ -53,6 +58,7 @@ func NewEntryOptions(options ...func(*EntryOptions) error) (*EntryOptions, error
 	return c, nil
 }
 
+//entryOptionsCreateStmt returns the options portion of the entry insert statement.
 func (e *EntryOptions) entryOptionsCreateStmt() []byte {
 	var cbuf []byte
 	if e != nil {
@@ -79,6 +85,8 @@ func (e *EntryOptions) entryOptionsCreateStmt() []byte {
 	return cbuf
 }
 
+//NewEntryOptionsFromStmt returns entry options representing the options portion of the statement. Returns an error if the
+//entry statement could not be parsed.
 func NewEntryOptionsFromStmt(stmt []string) (*EntryOptions, error) {
 	doesExp, err := strconv.ParseBool(stmt[0])
 	if err != nil {

@@ -3,9 +3,10 @@
 
 package stitchdb
 
+//RWMode represents the R/W access modifier.
 type RWMode int
 
 const (
-	MODE_READ RWMode = iota
-	MODE_READ_WRITE
+	MODE_READ       RWMode = iota //Read Only
+	MODE_READ_WRITE               //Read and Write
 )
