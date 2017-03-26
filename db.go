@@ -119,6 +119,7 @@ func (db *StitchDB) Open() error {
 				}
 				db.buckets[bktName] = bucket
 				db.buckets[bktName].OpenBucket(db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION))
+				fmt.Println(db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION))
 			}
 		}
 	}
@@ -158,7 +159,7 @@ func (db *StitchDB) Close() error {
 	db.system = nil
 	db.bktcfgf = nil
 	// Pause for manageFrequency * 2 to allow bucket managers to exit gracefully.
-	time.Sleep(db.config.manageFrequency * 2)
+	//time.Sleep(db.config.manageFrequency * 2)
 	return nil
 }
 

@@ -71,7 +71,7 @@ func (b *Bucket) loadBucketFile() error {
 	var err error
 	var iline []byte
 	for {
-		for i := 0; i < 128; i++ {
+		for i := 0; i < 1024; i++ {
 			iline, err = r.ReadBytes('\n')
 			if err == io.EOF && len(iline) <= 0 {
 				break //Read is complete

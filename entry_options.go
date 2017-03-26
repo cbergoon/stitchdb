@@ -69,7 +69,7 @@ func (e *EntryOptions) entryOptionsCreateStmt() []byte {
 		cbuf = append(cbuf, strconv.FormatInt(e.expTime.Unix(), 10)...)
 		cbuf = append(cbuf, '~')
 		cbuf = append(cbuf, strconv.FormatInt(e.invTime.Unix(), 10)...)
-		cbuf = append(cbuf, ':')
+		cbuf = append(cbuf, '~')
 		cbuf = append(cbuf, strconv.FormatFloat(e.tol, 'f', -1, 64)...)
 	} else {
 		cbuf = append(cbuf, strconv.Itoa(boolToInt(false))...)
@@ -79,7 +79,7 @@ func (e *EntryOptions) entryOptionsCreateStmt() []byte {
 		cbuf = append(cbuf, strconv.FormatInt(0, 10)...)
 		cbuf = append(cbuf, '~')
 		cbuf = append(cbuf, strconv.FormatInt(0, 10)...)
-		cbuf = append(cbuf, ':')
+		cbuf = append(cbuf, '~')
 		cbuf = append(cbuf, strconv.FormatFloat(0.01, 'f', -1, 64)...)
 	}
 	return cbuf
@@ -108,7 +108,7 @@ func NewEntryOptionsFromStmt(stmt []string) (*EntryOptions, error) {
 		return nil, errors.Annotate(err, "error: entry_options: failed to parse entry options")
 	}
 	invTime := time.Unix(invInt, 0)
-	tol, err := strconv.ParseFloat(stmt[6], 64)
+	tol, err := strconv.ParseFloat(strings.TrimSpace(stmt[4]), 64)
 	if err != nil {
 		return nil, errors.Annotate(err, "error: entry_options: failed to parse entry options")
 	}
