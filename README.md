@@ -3,7 +3,10 @@
     src="logo.png" 
     width="365" height="63" border="0" alt="StitchDB">
 <br>
-<a href="https://travis-ci.org/cbergoon/stitchdb"><img src="https://travis-ci.org/cbergoon/StitchDB.svg?branch=master" alt="Build"></a>
+<a href="https://travis-ci.org/cbergoon/stitchdb"><img src="https://travis-ci.org/cbergoon/stitchdb.svg?branch=master" alt="Build"></a>
+<a href="https://goreportcard.com/report/github.com/cbergoon/stitchdb"><img src="https://goreportcard.com/badge/github.com/cbergoon/stitchdb" alt="Report"></a>
+<a href="http://gocover.io/github.com/cbergoon/stitchdb"><img src="https://img.shields.io/badge/coverage-N%2FA-lightgrey.svg" alt="Coverage"></a>
+<a href="https://godoc.org/github.com/cbergoon/stitchdb"><img src="https://img.shields.io/badge/godoc-reference-brightgreen.svg" alt="Docs"></a>
 </p>
 
 Yet another key value store - StitchDB is an in memory key-value store persisted with an append only log with support for 
@@ -19,7 +22,7 @@ then to learn something from.
 
 All contributions, ideas, and criticisms are welcome.
  
-###Coming Soon
+### Coming Soon
 * StitchQL: A Query Language for StitchDB
   * Interpreted Language of Some Sort
   * Verb-like Syntax Tailored to Geo/Time Use Case
