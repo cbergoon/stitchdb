@@ -3,6 +3,7 @@
     src="logo.png" 
     width="365" height="63" border="0" alt="StitchDB">
 <br>
+<a href="https://travis-ci.org/cbergoon/stitchdb"><img src="https://travis-ci.org/cbergoon/StitchDB.svg?branch=master" alt="Build"></a>
 </p>
 
 Yet another key value store - StitchDB is an in memory key-value store persisted with an append only log with support for 
