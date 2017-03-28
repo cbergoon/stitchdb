@@ -1,4 +1,4 @@
-[[https://github.com/cbergoon/stitchdb/blob/master/logo.png]]
+![alt](https://github.com/cbergoon/stitchdb/blob/master/logo.png)
 
 ## StitchDB
 Yet another key value store - StitchDB is an in memory key-value store persisted with an append only log with support for 
