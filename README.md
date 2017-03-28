@@ -1,3 +1,5 @@
+[[https://github.com/cbergoon/stitchdb/blob/master/logo.png]]
+
 ## StitchDB
 Yet another key value store - StitchDB is an in memory key-value store persisted with an append only log with support for 
 geolocation and time series data. 
@@ -10,6 +12,19 @@ This has also been a great way to dive deeper into the key-value store world and
 are currently employed to mitigate those challenges. Hopefully, others will find this project useful if not for use in a project, 
 then to learn something from. 
 
+All contributions, ideas, and criticisms are welcome.
+ 
+###Coming Soon
+* StitchQL: A Query Language for StitchDB
+  * Interpreted Language of Some Sort
+  * Verb-like Syntax Tailored to Geo/Time Use Case
+* StitchServer: An HTTP API Around Stitch DB With Management System 
+  * DB Viewer/Editor
+  * Users/Authentication
+  * Performance Monitor/System Info
+  * R-Tree Viewer 
+* Built in Time Series Support
+  
 ### Goals
 StitchDB was born out of a need to replace a legacy timeseries/geolocation package with a more robust real-time solution 
 that could stand alone as a separate service with little work. It needed to have separation of data or buckets, searchable 
@@ -31,15 +46,6 @@ API documentation is available at [stitchdb Godoc](https://godoc.org/github.com/
 The Wiki is full of explanations and examples:
 
 [https://github.com/cbergoon/stitchdb/wiki](https://github.com/cbergoon/stitchdb/wiki)
-
-API documentation is available at:
-
-[http://godoc.org/cbergoon/stitchdb](http://godoc.org/cbergoon/stitchdb)
-
-Find some other writings about the use case and design of StitchDB below:
-
-[http://cbergoon.github.io/stitchdb/a1](http://cbergoon.github.io/stitchdb/a1)
-[http://cbergoon.github.io/stitchdb/a2](http://cbergoon.github.io/stitchdb/a2) 
 
 ### Usage
 
@@ -122,13 +128,16 @@ Then run it with:
 ```bash
 go run <filename>.go
 ```
+
+<!---
 ### StitchDB Ecosystem
-* [stitchd](https://github.com/cbergoon/stitchd) - Builds a HTTP and RPC API layer over StitchDB allowing it to operate as a standalone service.
+* [stitchserver](https://github.com/cbergoon/stitchd) - Builds a HTTP and RPC API layer over StitchDB allowing it to operate as a standalone service.
 * [stitchraft](https://github.com/cbergoon/stitchraft) - An distributed and consistent service that adds RAFT to StitchDB-beacon (work in progress name).
 * [stitchql](https://github.com/cbergoon/stitchql) - A query language that interpreter that provides implements a simple language to access/manipulate StitchDB.
+-->
 
 ### Future Work/Ideas
-* stitchd - Builds a HTTP and RPC API layer over StitchDB allowing it to operate as a standalone service.
+* stitchserver - Builds a HTTP and RPC API layer over StitchDB allowing it to operate as a standalone service.
 * stitchraft - An distributed and consistent service that adds RAFT to StitchDB-beacon (work in progress name).
 * stitchql - A query language that interpreter that provides implements a simple language to access/manipulate StitchDB.
 
