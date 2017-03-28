@@ -1,7 +1,7 @@
 <p align="center">
 <img 
     src="logo.png" 
-    width="365" height="63" border="0" alt="StitchDB">
+    width="338" height="63" border="0" alt="StitchDB">
 <br>
 <a href="https://travis-ci.org/cbergoon/stitchdb"><img src="https://travis-ci.org/cbergoon/stitchdb.svg?branch=master" alt="Build"></a>
 <a href="https://goreportcard.com/report/github.com/cbergoon/stitchdb"><img src="https://goreportcard.com/badge/github.com/cbergoon/stitchdb" alt="Report"></a>
