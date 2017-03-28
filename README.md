@@ -1,6 +1,10 @@
-![alt](https://github.com/cbergoon/stitchdb/blob/master/logo.png)
+<p align="center">
+<img 
+    src="logo.png" 
+    width="365" height="63" border="0" alt="StitchDB">
+<br>
+</p>
 
-## StitchDB
 Yet another key value store - StitchDB is an in memory key-value store persisted with an append only log with support for 
 geolocation and time series data. 
 
