@@ -13,10 +13,10 @@ func TestRtreegoPoint(t *testing.T) {
 	if rpt[0] != 1.0 {
 		t.Errorf("Failure: rtreegoPoint(Point{1.0, 2.0, 3.0}) expected value at [0] == 1.0 got %v", rpt[0])
 	}
-	if rpt[0] != 2.0 {
+	if rpt[1] != 2.0 {
 		t.Errorf("Failure: rtreegoPoint(Point{1.0, 2.0, 3.0}) expected value at [1] == 2.0 got %v", rpt[1])
 	}
-	if rpt[0] != 3.0 {
+	if rpt[2] != 3.0 {
 		t.Errorf("Failure: rtreegoPoint(Point{1.0, 2.0, 3.0}) expected value at [2] == 3.0 got %v", rpt[2])
 	}
 }
@@ -56,9 +56,9 @@ func TestNewRect(t *testing.T) {
 		t.Errorf("Failure: Expected point coordinate at index 1 == 2.0 got %v", rt.p[1])
 	}
 	if rt.lengths[0] != 3.0 {
-		t.Errorf("Failure: Expected length coordinate at index 0 == 3.0 got %v", rt.lengths[0])
+		t.Errorf("Failure: Expected length coordinate at index 3 == 3.0 got %v", rt.lengths[0])
 	}
 	if rt.lengths[1] != 4.0 {
-		t.Errorf("Failure: Expected length coordinate at index 1 == 4.0 got %v", rt.lengths[1])
+		t.Errorf("Failure: Expected length coordinate at index 4 == 4.0 got %v", rt.lengths[1])
 	}
 }
