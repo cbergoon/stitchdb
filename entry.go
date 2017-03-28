@@ -87,7 +87,6 @@ func (e *Entry) Less(than btree.Item, itype interface{}) bool {
 	default:
 		return e.k < tl.k
 	}
-	return e.k < tl.k
 }
 
 //IsExpired checks if the expire time for an entry has passed.

@@ -12,9 +12,13 @@ import (
 type IndexValueType int
 
 const (
+	//STRING_INDEX indicates data sorting should assume string.
 	STRING_INDEX IndexValueType = iota
+	//UINT_INDEX indicates data sorting should assume uint.
 	UINT_INDEX
+	//INT_INDEX indicates data sorting should assume int.
 	INT_INDEX
+	//FLOAT_INDEX indicates data sorting should assume float.
 	FLOAT_INDEX
 )
 

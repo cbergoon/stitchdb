@@ -99,10 +99,10 @@ func TestNewBucketOptions(t *testing.T) {
 		t.Errorf("Failure: NewBucketOptions(System, Geo, GeoRangeIsInclusive, Time, Dims(3), BTreeDegree(256)) returned nil bucket options")
 	}
 	if bucketOptions.btdeg != 256 {
-		t.Errorf("Failure: Expected bucketOptions.btdeg == %v got bucketOptions.btdeg == %v", 256, 256, bucketOptions.btdeg)
+		t.Errorf("Failure: Expected bucketOptions.btdeg == %v got bucketOptions.btdeg == %v", 256, bucketOptions.btdeg)
 	}
 	if bucketOptions.dims != 3 {
-		t.Errorf("Failure: Expected bucketOptions.dims == %v got bucketOptions.dims == %v", 3, 3, bucketOptions.dims)
+		t.Errorf("Failure: Expected bucketOptions.dims == %v got bucketOptions.dims == %v", 3, bucketOptions.dims)
 	}
 	if bucketOptions.time != true {
 		t.Errorf("Failure: Expected bucketOptions.time == true got bucketOptions.time == %v", bucketOptions.time)
@@ -150,10 +150,10 @@ func TestNewBucketOptionsFromStmt(t *testing.T) {
 		t.Errorf("Failure: NewBucketOptionsFromStmt(parts) statement returned nil bucket options")
 	}
 	if parsedBucketOptions.btdeg != 256 {
-		t.Errorf("Failure: Expected bucketOptions.btdeg == %v got bucketOptions.btdeg == %v", 256, 256, parsedBucketOptions.btdeg)
+		t.Errorf("Failure: Expected bucketOptions.btdeg == %v got bucketOptions.btdeg == %v", 256, parsedBucketOptions.btdeg)
 	}
 	if parsedBucketOptions.dims != 3 {
-		t.Errorf("Failure: Expected bucketOptions.dims == %v got bucketOptions.dims == %v", 3, 3, parsedBucketOptions.dims)
+		t.Errorf("Failure: Expected bucketOptions.dims == %v got bucketOptions.dims == %v", 3, parsedBucketOptions.dims)
 	}
 	if parsedBucketOptions.time != true {
 		t.Errorf("Failure: Expected bucketOptions.time == true got bucketOptions.time == %v", parsedBucketOptions.time)

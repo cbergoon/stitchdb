@@ -20,7 +20,9 @@ import (
 )
 
 //Todo: Replace with the StitchDB config value.
-const COMPACT_FACTOR int = 10 //Multiplier factor for to determine when to compact log.
+
+//COMPACT_FACTOR is the Multiplier factor for to determine when to compact log.
+const COMPACT_FACTOR int = 10
 
 //Bucket represents a bucket in the database. Think 'table' but for key-value store.
 type Bucket struct {
@@ -78,14 +80,14 @@ func (b *Bucket) loadBucketFile() error {
 			} else if err != nil {
 				return errors.Annotate(err, "error: bucket: failed to read bucket file")
 			}
-			var size int = 0
+			var size int
 			size, err = strconv.Atoi(strings.TrimSpace(string(iline)))
 			if err != nil {
 				return errors.Annotate(err, "error: bucket: bucket file data is corrupt; missing or unusable entry length")
 			}
 			if size > 0 {
 				entry := make([]byte, size)
-				var readlen int = 0
+				var readlen int
 				readlen, err = io.ReadFull(r, entry)
 				if err == io.ErrUnexpectedEOF || err == io.EOF {
 					break
@@ -144,9 +146,8 @@ func parseEntryStmtTypeName(stmt string) (string, []string, error) {
 	parts := strings.Split(stmt, "~")
 	if parts[0] == "INSERT" || parts[0] == "DELETE" {
 		return strings.TrimSpace(parts[0]), parts, nil
-	} else {
-		return "", nil, errors.New("error: bucket: invalid or unrecognized statement")
 	}
+	return "", nil, errors.New("error: bucket: invalid or unrecognized statement")
 }
 
 //writeAOFBuf writes the db file buffer to disk performing a file sync when if required.
@@ -252,10 +253,10 @@ func (b *Bucket) get(key *Entry) *Entry {
 	return nil
 }
 
-//insert adds an entry to the bucket populating the expries, invalidation, and index trees. It is assumed the the caller
+//insert adds an entry to the bucket populating the expires, invalidation, and index trees. It is assumed the the caller
 //obtains a lock on the db.
 func (b *Bucket) insert(entry *Entry) *Entry {
-	var pentry *Entry = nil
+	var pentry *Entry
 	if p := b.data.ReplaceOrInsert(entry); p != nil {
 		pentry = p.(*Entry)
 	}
@@ -345,7 +346,7 @@ func (b *Bucket) startTx(mode RWMode) (*Tx, error) {
 	return tx, nil
 }
 
-//handleTx executes the provided function against the transaction. The transaction will be commited if and only if the
+//handleTx executes the provided function against the transaction. The transaction will be committed if and only if the
 //transaction is a Read/Write transaction and the provided function returns a nil error otherwise the transaction will be
 //rolled back.
 func (b *Bucket) handleTx(mode RWMode, f func(t *Tx) error) error {
@@ -368,7 +369,6 @@ func (b *Bucket) handleTx(mode RWMode, f func(t *Tx) error) error {
 		err := tx.RollbackTx()
 		return err
 	}
-	return err
 }
 
 //manager is the main execution loop for the bucket. The manager loop is executed at the specified frequency of the database.

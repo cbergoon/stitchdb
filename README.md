@@ -139,14 +139,14 @@ go run <filename>.go
 
 <!---
 ### StitchDB Ecosystem
-* [stitchserver](https://github.com/cbergoon/stitchd) - Builds a HTTP and RPC API layer over StitchDB allowing it to operate as a standalone service.
-* [stitchraft](https://github.com/cbergoon/stitchraft) - An distributed and consistent service that adds RAFT to StitchDB-beacon (work in progress name).
+* [stitchserver](https://github.com/cbergoon/stitchserver) - Builds a HTTP and RPC API layer over StitchDB allowing it to operate as a standalone service.
+* [stitchraft](https://github.com/cbergoon/stitchraft) - An distributed and consistent service that adds RAFT to stitchserver (work in progress name).
 * [stitchql](https://github.com/cbergoon/stitchql) - A query language that interpreter that provides implements a simple language to access/manipulate StitchDB.
 -->
 
 ### Future Work/Ideas
 * stitchserver - Builds a HTTP and RPC API layer over StitchDB allowing it to operate as a standalone service.
-* stitchraft - An distributed and consistent service that adds RAFT to StitchDB-beacon (work in progress name).
+* stitchraft - An distributed and consistent service that adds RAFT to stitchserver (work in progress name).
 * stitchql - A query language that interpreter that provides implements a simple language to access/manipulate StitchDB.
 
 ### License 

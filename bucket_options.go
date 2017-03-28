@@ -25,13 +25,13 @@ func System(b *BucketOptions) error {
 	return nil
 }
 
-//Geo enables geolocation funcitonality.
+//Geo enables geo-location functionality.
 func Geo(b *BucketOptions) error {
 	b.geo = true
 	return nil
 }
 
-//GeoRangeIsInlusive enables inclusive range checks.
+//GeoRangeIsInclusive enables inclusive range checks.
 func GeoRangeIsInclusive(b *BucketOptions) error {
 	b.georincl = true
 	return nil

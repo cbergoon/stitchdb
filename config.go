@@ -13,9 +13,12 @@ import (
 type IOFrequency int
 
 const (
-	EACH    IOFrequency = iota //Each Transaction
-	MNGFREQ                    //At Management Frequency
-	NONE                       //Never Execute
+	//EACH action will take place at each commit/manage cycle
+	EACH IOFrequency = iota
+	//MNGFREQ action will take place at each manage cycle
+	MNGFREQ
+	//NONE action will never take place
+	NONE
 )
 
 //Config holds StitchDB metadata.

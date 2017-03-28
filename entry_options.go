@@ -38,7 +38,7 @@ func InvalidTime(time time.Time) func(*EntryOptions) error {
 	}
 }
 
-//Sets the tolerance (accuracy) of the geo-location for the entry primarily used to build the rtree.
+//Tol sets the tolerance (accuracy) of the geo-location for the entry primarily used to build the rtree.
 func Tol(t float64) func(*EntryOptions) error {
 	return func(e *EntryOptions) error {
 		e.tol = t

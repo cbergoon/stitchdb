@@ -7,6 +7,8 @@ package stitchdb
 type RWMode int
 
 const (
-	MODE_READ       RWMode = iota //Read Only
-	MODE_READ_WRITE               //Read and Write
+	//Read Only
+	MODE_READ RWMode = iota
+	//Read and Write
+	MODE_READ_WRITE
 )

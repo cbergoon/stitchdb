@@ -12,6 +12,7 @@ import (
 	"github.com/juju/errors"
 )
 
+//RbCtx preserves the state of the tree during a transaction representing the changes made to allow for commits/rollbacks.
 type RbCtx struct {
 	//Holds the backward changes made during the transaction. Keys with a nil value were inserted
 	//during the transaction and should be deleted. Keys with a non-nil value were deleted
@@ -404,18 +405,16 @@ func (t *Tx) Max(index string) (*Entry, error) {
 func (t *Tx) Has(index string, e *Entry) (bool, error) {
 	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
 		return t.bkt.indexes[index].t.Has(e), nil
-	} else {
-		return t.bkt.data.Has(e), nil
 	}
+	return t.bkt.data.Has(e), nil
 }
 
 //Size returns the number of entries in the bucket.
 func (t *Tx) Size(index string) (int, error) {
 	if strings.TrimSpace(index) != "" && t.bkt.indexExists(index) {
 		return t.bkt.indexes[index].t.Len(), nil
-	} else {
-		return t.bkt.data.Len(), nil
 	}
+	return t.bkt.data.Len(), nil
 }
 
 //SearchIntersect finds entries of the bucket that fall within the bounds of the provided rectangle. Bucket must be

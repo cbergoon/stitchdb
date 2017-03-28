@@ -15,9 +15,12 @@ import (
 )
 
 const (
-	BUCKET_CONFIG_FILE        string = "sbkt.conf"   //Main DB AOF
-	BUCKET_FILE_EXTENSION     string = ".stitch"     //Bucket AOF file extension
-	BUCKET_TMP_FILE_EXTENSION string = ".stitch.tmp" //Bucket AOF file extension used when replacing file
+	//BUCKET_CONFIG_FILE is the main DB AOF
+	BUCKET_CONFIG_FILE string = "sbkt.conf"
+	//BUCKET_FILE_EXTENSION is the bucket AOF file extension
+	BUCKET_FILE_EXTENSION string = ".stitch"
+	//BUCKET_TMP_FILE_EXTENSION is the bucket AOF file extension used when replacing file
+	BUCKET_TMP_FILE_EXTENSION string = ".stitch.tmp"
 )
 
 //StitchDB represents the database object. All operations on the database originate from this object.
