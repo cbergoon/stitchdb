@@ -4,6 +4,7 @@
 package stitchdb
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -14,43 +15,43 @@ func TestNewEntry(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failure: NewEntryOptions(ExpireTime(time.Now()), InvalidTime(time.Now()), Tol(9.9)) returned error \"%v\"", err)
 	}
-	entry1, err := NewEntry("Test01", "", false, options)
+	entry1, err := NewEntry("Test01", "{\"coords\": [1.0, 3.0, 4.0]}", true, options)
 	if err != nil {
 		t.Errorf("Failure: NewEntry(\"Test01\", \"\", false, options), InvalidTime(time.Now()), Tol(9.9)) returned error \"%v\"", err)
 	}
 	if entry1.k != "Test01" {
 		t.Errorf("Failure: Expected entry1.k == \"Test01\" got entry1.k == %v", entry1.k)
 	}
-	if entry1.v != "" {
-		t.Errorf("Failure: Expected entry1.v == \"\" got entry1.v == %v", entry1.v)
+	if entry1.v != "{\"coords\": [1.0, 3.0, 4.0]}" {
+		t.Errorf("Failure: Expected entry1.v == \"{\"coords\": [1.0, 3.0, 4.0]}\" got entry1.v == %v", entry1.v)
 	}
-	if entry1.location[0] != 0 {
-		t.Errorf("Failure: Expected entry1.location[0] == 0 got entry1.location[0] == %v", entry1.location[0])
+	if entry1.location[0] != 1.0 {
+		t.Errorf("Failure: Expected entry1.location[0] == 1.0 got entry1.location[0] == %v", entry1.location[0])
 	}
-	if entry1.location[1] != 0 {
-		t.Errorf("Failure: Expected entry1.location[1] == 0 got entry1.location[1] == %v", entry1.location[1])
+	if entry1.location[1] != 3.0 {
+		t.Errorf("Failure: Expected entry1.location[1] == 3.0 got entry1.location[1] == %v", entry1.location[1])
 	}
-	if entry1.location[2] != 0 {
-		t.Errorf("Failure: Expected entry1.location[2] == 0 got entry1.location[2] == %v", entry1.location[2])
+	if entry1.location[2] != 4.0 {
+		t.Errorf("Failure: Expected entry1.location[2] == 4.0 got entry1.location[2] == %v", entry1.location[2])
 	}
-	entry2, err := NewEntry("Test02", "", true, options)
+	entry2, err := NewEntry("Test02", "{\"coords\": [2.0, 4.0, 5.0]}", true, options)
 	if err != nil {
 		t.Errorf("Failure: NewEntry(\"Test02\", \"\", false, options), InvalidTime(time.Now()), Tol(9.9)) returned error \"%v\"", err)
 	}
 	if entry2.k != "Test02" {
 		t.Errorf("Failure: Expected entry2.k == \"Test02\" got entry2.k == %v", entry2.k)
 	}
-	if entry2.v != "" {
-		t.Errorf("Failure: Expected entry2.v == \"\" got entry2.v == %v", entry2.v)
+	if entry2.v != "{\"coords\": [2.0, 4.0, 5.0]}" {
+		t.Errorf("Failure: Expected entry2.v == \"{\"coords\": [2.0, 4.0, 5.0]}\" got entry2.v == %v", entry2.v)
 	}
-	if entry2.location[0] != 0 {
-		t.Errorf("Failure: Expected entry2.location[0] == 0 got entry2.location[0] == %v", entry2.location[0])
+	if entry2.location[0] != 2.0 {
+		t.Errorf("Failure: Expected entry2.location[0] == 2.0 got entry2.location[0] == %v", entry2.location[0])
 	}
-	if entry2.location[1] != 0 {
-		t.Errorf("Failure: Expected entry2.location[1] == 0 got entry2.location[1] == %v", entry2.location[1])
+	if entry2.location[1] != 4.0 {
+		t.Errorf("Failure: Expected entry2.location[1] == 4.0 got entry2.location[1] == %v", entry2.location[1])
 	}
-	if entry2.location[2] != 0 {
-		t.Errorf("Failure: Expected entry2.location[2] == 0 got entry2.location[2] == %v", entry2.location[2])
+	if entry2.location[2] != 5.0 {
+		t.Errorf("Failure: Expected entry2.location[2] == 5.0 got entry2.location[2] == %v", entry2.location[2])
 	}
 }
 
@@ -59,24 +60,24 @@ func TestNewEntryWithGeo(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failure: NewEntryOptions(ExpireTime(time.Now()), InvalidTime(time.Now()), Tol(9.9)) returned error \"%v\"", err)
 	}
-	entry1, err := NewEntryWithGeo("Test01", "", options)
+	entry1, err := NewEntryWithGeo("Test01", "{\"coords\": [1.0, 3.0, 4.0]}", options)
 	if err != nil {
-		t.Errorf("Failure: NewEntry(\"Test01\", \"\", false, options), InvalidTime(time.Now()), Tol(9.9)) returned error \"%v\"", err)
+		t.Errorf("Failure: NewEntryWithGeo(\"Test01\", \"{\"coords\": [1.0, 3.0, 4.0]}\", options) returned error \"%v\"", err)
 	}
 	if entry1.k != "Test01" {
 		t.Errorf("Failure: Expected entry1.k == \"Test01\" got entry1.k == %v", entry1.k)
 	}
-	if entry1.v != "" {
-		t.Errorf("Failure: Expected entry1.v == \"\" got entry1.v == %v", entry1.v)
+	if entry1.v != "{\"coords\": [1.0, 3.0, 4.0]}" {
+		t.Errorf("Failure: Expected entry1.v == \"{\"coords\": [1.0, 3.0, 4.0]}\" got entry1.v == %v", entry1.v)
 	}
-	if entry1.location[0] != 0 {
-		t.Errorf("Failure: Expected entry1.location[0] == 0 got entry1.location[0] == %v", entry1.location[0])
+	if entry1.location[0] != 1.0 {
+		t.Errorf("Failure: Expected entry1.location[0] == 1.0 got entry1.location[0] == %v", entry1.location[0])
 	}
-	if entry1.location[1] != 0 {
-		t.Errorf("Failure: Expected entry1.location[1] == 0 got entry1.location[1] == %v", entry1.location[1])
+	if entry1.location[1] != 3.0 {
+		t.Errorf("Failure: Expected entry1.location[1] == 3.0 got entry1.location[1] == %v", entry1.location[1])
 	}
-	if entry1.location[2] != 0 {
-		t.Errorf("Failure: Expected entry1.location[2] == 0 got entry1.location[2] == %v", entry1.location[2])
+	if entry1.location[2] != 4.0 {
+		t.Errorf("Failure: Expected entry1.location[2] == 4.0 got entry1.location[2] == %v", entry1.location[2])
 	}
 }
 
@@ -131,9 +132,9 @@ func TestEntry_IsExpired(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failure: NewEntry(\"Test02\", \"\", true, options2) returned error \"%v\"", err)
 	}
-	options3, err := NewEntryOptions(ExpireTime(time.Now().Add(time.Minute)), InvalidTime(time.Now().Add(time.Second)), Tol(9.9))
+	options3, err := NewEntryOptions(ExpireTime(time.Now().Add(time.Minute)), InvalidTime(time.Now().Add(time.Minute)), Tol(9.9))
 	if err != nil {
-		t.Errorf("Failure: NewEntryOptions(ExpireTime(time.Now().Add(time.Minute)), InvalidTime(time.Now().Add(time.Second)), Tol(9.9)) returned error \"%v\"", err)
+		t.Errorf("Failure: NewEntryOptions(ExpireTime(time.Now().Add(time.Minute)), InvalidTime(time.Now().Add(time.Minute)), Tol(9.9)) returned error \"%v\"", err)
 	}
 	entry3, err := NewEntry("Test03", "", true, options3)
 	if err != nil {
@@ -183,15 +184,16 @@ func TestEntry_IsInvalid(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failure: NewEntry(\"Test02\", \"\", true, options2) returned error \"%v\"", err)
 	}
-	options3, err := NewEntryOptions(ExpireTime(time.Now().Add(time.Minute)), InvalidTime(time.Now().Add(time.Second)), Tol(9.9))
+	options3, err := NewEntryOptions(ExpireTime(time.Now().Add(time.Minute)), InvalidTime(time.Now().Add(time.Minute)), Tol(9.9))
 	if err != nil {
-		t.Errorf("Failure: NewEntryOptions(ExpireTime(time.Now().Add(time.Minute)), InvalidTime(time.Now().Add(time.Second)), Tol(9.9)) returned error \"%v\"", err)
+		t.Errorf("Failure: NewEntryOptions(ExpireTime(time.Now().Add(time.Minute)), InvalidTime(time.Now().Add(time.Minute)), Tol(9.9)) returned error \"%v\"", err)
 	}
 	entry3, err := NewEntry("Test03", "", true, options3)
 	if err != nil {
 		t.Errorf("Failure: NewEntry(\"Test03\", \"\", true, options3) returned error \"%v\"", err)
 	}
 	// Entry 1 Pre-Sleep
+	fmt.Println(entry1.InvalidatesAt(), time.Now())
 	if !entry1.IsInvalid() {
 		t.Errorf("Failure: Expected entry1 to be invalid")
 	}
@@ -249,21 +251,21 @@ func TestEntry_InvalidatesAt(t *testing.T) {
 }
 
 func TestEntry_Bounds(t *testing.T) {
-	options, err := NewEntryOptions(ExpireTime(time.Now()), InvalidTime(time.Now()), Tol(9.9))
+	options, err := NewEntryOptions(ExpireTime(time.Now()), InvalidTime(time.Now()), Tol(0))
 	if err != nil {
-		t.Errorf("Failure: NewEntryOptions(ExpireTime(time.Now()), InvalidTime(time.Now()), Tol(9.9)) returned error \"%v\"", err)
+		t.Errorf("Failure: NewEntryOptions(ExpireTime(time.Now()), InvalidTime(time.Now()), Tol(0)) returned error \"%v\"", err)
 	}
-	entry1, err := NewEntryWithGeo("Test01", "", options)
+	entry1, err := NewEntryWithGeo("Test01", "{\"coords\": [1.0, 3.0, 4.0]}", options)
 	if err != nil {
-		t.Errorf("Failure: NewEntryWithGeo(\"Test01\", \"\", options) returned error \"%v\"", err)
+		t.Errorf("Failure: NewEntryWithGeo(\"Test01\", \"{\"coords\": [1.0, 3.0, 4.0]}\", options) returned error \"%v\"", err)
 	}
-	if entry1.Bounds().PointCoord(0) != 0 || entry1.Bounds().LengthsCoord(0) != 0 {
+	if entry1.Bounds().PointCoord(0) != 1.0 || entry1.Bounds().LengthsCoord(0) != 0 {
 		t.Errorf("Failure: Invalid resulting rectangle")
 	}
-	if entry1.Bounds().PointCoord(1) != 0 || entry1.Bounds().LengthsCoord(1) != 0 {
+	if entry1.Bounds().PointCoord(1) != 3.0 || entry1.Bounds().LengthsCoord(1) != 0 {
 		t.Errorf("Failure: Invalid resulting rectangle")
 	}
-	if entry1.Bounds().PointCoord(2) != 0 || entry1.Bounds().LengthsCoord(2) != 0 {
+	if entry1.Bounds().PointCoord(2) != 4.0 || entry1.Bounds().LengthsCoord(2) != 0 {
 		t.Errorf("Failure: Invalid resulting rectangle")
 	}
 }
@@ -277,24 +279,24 @@ func TestEntry_EntryInsertStmt(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failure: NewEntryWithGeo(\"Test01\", \"\", options) returned error \"%v\"", err)
 	}
-	entry2, err := NewEntry("Test02", "", false, options)
+	entry2, err := NewEntry("Test02", "{\"coords\": [1.0, 3.0, 4.0]}", false, options)
 	if err != nil {
-		t.Errorf("Failure: NewEntry(\"Test02\", \"\", false, options) returned error \"%v\"", err)
+		t.Errorf("Failure: NewEntry(\"Test02\", \"{\"coords\": [1.0, 3.0, 4.0]}\", false, options) returned error \"%v\"", err)
 	}
-	entry3, err := NewEntry("Test03", "", true, options)
+	entry3, err := NewEntry("Test03", "{\"coords\": [1.0, 3.0]}", true, options)
 	if err != nil {
-		t.Errorf("Failure: NewEntry(\"Test03\", \"\", true, options) returned error \"%v\"", err)
+		t.Errorf("Failure: NewEntry(\"Test03\", \"{\"coords\": [1.0, 3.0]}\", true, options) returned error \"%v\"", err)
 	}
 	stmt1i := entry1.EntryInsertStmt()
-	if len(stmt1i) != 10 {
+	if len(stmt1i) != 48 {
 		t.Errorf("Failure: Expected statement length 10 got %v", len(stmt1i))
 	}
 	stmt2i := entry2.EntryInsertStmt()
-	if len(stmt2i) != 10 {
+	if len(stmt2i) != 75 {
 		t.Errorf("Failure: Expected statement length 10 got %v", len(stmt2i))
 	}
 	stmt3i := entry3.EntryInsertStmt()
-	if len(stmt3i) != 10 {
+	if len(stmt3i) != 70 {
 		t.Errorf("Failure: Expected statement length 10 got %v", len(stmt3i))
 	}
 }
@@ -308,24 +310,24 @@ func TestEntry_EntryDeleteStmt(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failure: NewEntryWithGeo(\"Test01\", \"\", options) returned error \"%v\"", err)
 	}
-	entry2, err := NewEntry("Test02", "", false, options)
+	entry2, err := NewEntry("Test02", "{\"coords\": [1.0, 3.0, 4.0]}", false, options)
 	if err != nil {
-		t.Errorf("Failure: NewEntry(\"Test02\", \"\", false, options) returned error \"%v\"", err)
+		t.Errorf("Failure: NewEntry(\"Test02\", \"{\"coords\": [1.0, 3.0, 4.0]}\", false, options) returned error \"%v\"", err)
 	}
-	entry3, err := NewEntry("Test03", "", true, options)
+	entry3, err := NewEntry("Test03", "{\"coords\": [1.0, 3.0]}", true, options)
 	if err != nil {
-		t.Errorf("Failure: NewEntry(\"Test03\", \"\", true, options) returned error \"%v\"", err)
+		t.Errorf("Failure: NewEntry(\"Test03\", \"{\"coords\": [1.0, 3.0]}\", true, options) returned error \"%v\"", err)
 	}
 	stmt1d := entry1.EntryDeleteStmt()
-	if len(stmt1d) != 10 {
+	if len(stmt1d) != 48 {
 		t.Errorf("Failure: Expected statement length 10 got %v", len(stmt1d))
 	}
 	stmt2d := entry2.EntryDeleteStmt()
-	if len(stmt2d) != 10 {
+	if len(stmt2d) != 75 {
 		t.Errorf("Failure: Expected statement length 10 got %v", len(stmt2d))
 	}
 	stmt3d := entry3.EntryDeleteStmt()
-	if len(stmt3d) != 10 {
+	if len(stmt3d) != 70 {
 		t.Errorf("Failure: Expected statement length 10 got %v", len(stmt3d))
 	}
 }
@@ -367,43 +369,43 @@ func TestNewEntryFromStmt(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failure: NewEntryFromStmt(stmt1dp) returned error \"%v\"", err)
 	}
-	if entry1d != nil {
+	if entry1d == nil {
 		t.Errorf("Failure: NewEntryFromStmt(stmt1dp) returned nil entry")
 	}
 	entry1i, err := NewEntryFromStmt(stmt1ip)
 	if err != nil {
 		t.Errorf("Failure: NewEntryFromStmt(stmt1ip) returned error \"%v\"", err)
 	}
-	if entry1i != nil {
+	if entry1i == nil {
 		t.Errorf("Failure: NewEntryFromStmt(stmt1ip) returned nil entry")
 	}
 	entry2d, err := NewEntryFromStmt(stmt2dp)
 	if err != nil {
 		t.Errorf("Failure: NewEntryFromStmt(stmt2dp) returned error \"%v\"", err)
 	}
-	if entry2d != nil {
+	if entry2d == nil {
 		t.Errorf("Failure: NewEntryFromStmt(stmt2dp) returned nil entry")
 	}
 	entry2i, err := NewEntryFromStmt(stmt2ip)
 	if err != nil {
 		t.Errorf("Failure: NewEntryFromStmt(stmt2ip) returned error \"%v\"", err)
 	}
-	if entry2i != nil {
+	if entry2i == nil {
 		t.Errorf("Failure: NewEntryFromStmt(stmt2ip) returned nil entry")
 	}
 	entry3d, err := NewEntryFromStmt(stmt3dp)
 	if err != nil {
 		t.Errorf("Failure: NewEntryFromStmt(stmt3dp) returned error \"%v\"", err)
 	}
-	if entry3d != nil {
+	if entry3d == nil {
 		t.Errorf("Failure: NewEntryFromStmt(stmt3dp) returned nil entry")
 	}
 	entry3i, err := NewEntryFromStmt(stmt3ip)
 	if err != nil {
 		t.Errorf("Failure: NewEntryFromStmt(stmt3ip) returned error \"%v\"", err)
 	}
-	if entry3i != nil {
-		t.Errorf("Failure: NewEntryFromStmt(entry3i) returned nil entry")
+	if entry3i == nil {
+		t.Errorf("Failure: NewEntryFromStmt(stmt3ip) returned nil entry")
 	}
 }
 

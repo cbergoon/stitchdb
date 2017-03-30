@@ -9,6 +9,10 @@ func TestNewBucket(t *testing.T) {
 
 }
 
-func TestLoadBucketFile(t *testing.T) {
+func TestBucket_OpenBucket(t *testing.T) {
+
+}
+
+func TestBucket_Close(t *testing.T) {
 
 }

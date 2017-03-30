@@ -68,9 +68,10 @@ func NewEntryWithGeo(k string, v string, options *EntryOptions) (*Entry, error) 
 		})
 	}
 	return &Entry{
-		k:    k,
-		v:    v,
-		opts: opts,
+		k:        k,
+		v:        v,
+		opts:     opts,
+		location: l,
 	}, nil
 }
 
@@ -92,7 +93,7 @@ func (e *Entry) Less(than btree.Item, itype interface{}) bool {
 //IsExpired checks if the expire time for an entry has passed.
 func (e *Entry) IsExpired() bool {
 	if e.opts.doesExp {
-		if e.opts.expTime.After(time.Now()) {
+		if e.opts.expTime.Before(time.Now()) {
 			return true
 		}
 		return false
@@ -106,7 +107,7 @@ func (e *Entry) IsInvalid() bool {
 		return true
 	}
 	if e.opts.doesInv {
-		if e.opts.invTime.After(time.Now()) {
+		if e.opts.invTime.Before(time.Now()) {
 			return true
 		}
 		return false
