@@ -10,17 +10,15 @@
 </p>
 
 Yet another key value store - StitchDB is an in memory key-value store persisted with an append only log with support for 
-geolocation and time series data. 
+geo-location and time series data. StitchDB is accompanied by [StitchQL](https://github.com/cbergoon/stitchql) and [StitchServer](https://github.com/cbergoon/stitchserver). Together these projects 
+result in an entire database ecosystem complete with query language and standalone server daemon. 
 
-StitchDB's API is inspired by tidwall/buntdb and boltdb/bolt and makes use of their elegant API design. StitchDB strives 
+StitchDB's API is inspired by boltdb/bolt and tidwall/buntdband makes use of their elegant API design. StitchDB strives 
 to add a feature set that is tailored to a high throughput and less rigidly persistent use case with builtin multidimensional
-geolocation support. 
+geo-location and time-series data support. 
 
-This has also been a great way to dive deeper into the key-value store world and understand the problems and some of the solutions that 
-are currently employed to mitigate those challenges. Hopefully, others will find this project useful if not for use in a project, 
-then to learn something from. 
-
-All contributions, ideas, and criticisms are welcome.
+Hopefully, others will find this project useful for something you are working on or at least to learning resource. All 
+contributions, ideas, and criticisms are welcome.
  
 ### Coming Soon
 * StitchQL: A Query Language for StitchDB
@@ -137,17 +135,110 @@ Then run it with:
 go run <filename>.go
 ```
 
-<!---
-### StitchDB Ecosystem
+### StitchDB Operations
+Below are some examples of how to use the StitchDB API. This is not an exauhstive list but includes the most common use
+cases. Can't find something? Check the [docs](https://godoc.org/github.com/cbergoon/stitchdb).
+
+#### Create/Open a New DB
+```go
+
+```
+#### Create/Open a New Bucket
+```go
+
+```
+#### Drop a Bucket
+```go
+
+```
+#### Create an Index
+```go
+
+```
+#### Drop an Index
+```go
+
+```
+#### Create an Entry
+```go
+
+```
+#### Update an Entry
+```go
+
+```
+#### Delete an Entry
+```go
+
+```
+#### Start a Transaction
+
+##### Read Only Transactions
+```go
+
+```
+##### Read/Write Transactions
+```go
+
+```
+#### Querying a Bucket
+##### Ascend
+```go
+
+```
+```go
+
+```
+```go
+
+```
+##### Descend
+```go
+
+```
+```go
+
+```
+```go
+
+```
+##### Min/Max/Has
+```go
+
+```
+##### Search Intersection (Geo)
+```go
+
+```
+##### Search Within Radius (Geo)
+```go
+
+```
+##### Nearest Neighbor (Geo)
+```go
+
+```
+##### Nearest Neighbors (Geo)
+```go
+
+```
+##### Size
+```go
+
+```
+
+### Performance
+
+Benchmarks are ran on a MacBook Pro 3.1Ghz, 16GB RAM, SSD 
+
+#### Insertion
+
+#### Retrieval  
+
+### StitchDB Ecosystem (Future Work) 
 * [stitchserver](https://github.com/cbergoon/stitchserver) - Builds a HTTP and RPC API layer over StitchDB allowing it to operate as a standalone service.
 * [stitchraft](https://github.com/cbergoon/stitchraft) - An distributed and consistent service that adds RAFT to stitchserver (work in progress name).
 * [stitchql](https://github.com/cbergoon/stitchql) - A query language that interpreter that provides implements a simple language to access/manipulate StitchDB.
--->
-
-### Future Work/Ideas
-* stitchserver - Builds a HTTP and RPC API layer over StitchDB allowing it to operate as a standalone service.
-* stitchraft - An distributed and consistent service that adds RAFT to stitchserver (work in progress name).
-* stitchql - A query language that interpreter that provides implements a simple language to access/manipulate StitchDB.
 
 ### License 
 

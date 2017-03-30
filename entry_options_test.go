@@ -70,7 +70,7 @@ func TestNewEntryOptions(t *testing.T) {
 	}
 }
 
-func TestEntryOptionsCreateStmt(t *testing.T) {
+func TestEntryOptions_entryOptionsCreateStmt(t *testing.T) {
 	now := time.Now()
 	entryOptions, err := NewEntryOptions(ExpireTime(now), InvalidTime(now), Tol(9.99))
 	if err != nil {

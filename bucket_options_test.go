@@ -118,7 +118,7 @@ func TestNewBucketOptions(t *testing.T) {
 	}
 }
 
-func TestBucketOptionsCreateStmt(t *testing.T) {
+func TestBucketOptions_bucketOptionsCreateStmt(t *testing.T) {
 	bucketOptions, err := NewBucketOptions(System, Geo, GeoRangeIsInclusive, Time, Dims(3), BTreeDegree(256))
 	if err != nil {
 		t.Errorf("Failure: NewBucketOptions(System, Geo, GeoRangeIsInclusive, Time, Dims(3), BTreeDegree(256)) returned error \"%v\"", err)
