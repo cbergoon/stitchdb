@@ -8,11 +8,8 @@
 * Time series?
 * Wiki
 * Issues
-* Tests
-  * tx
-* Logo
 * Benchmarks
-* Improve resolution of times for invalid/expires
+* Improve resolution of times for invalid/expires causing reload to be incorrect
 * Add version badge
 
 #### Notes

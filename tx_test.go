@@ -17,23 +17,23 @@ func TestTx_Ascend(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	count := 0
 	db.View("test", func(t *Tx) error {
@@ -44,12 +44,12 @@ func TestTx_Ascend(t *testing.T) {
 		return err
 	})
 	if count != 256 {
-		t.Errorf("Failure: t.Ascend(...) unexpected iteration count")
+		t.Error("Failure: t.Ascend(...) unexpected iteration count")
 	}
 	//time.Sleep(time.Second * 2)
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -60,23 +60,23 @@ func TestTx_AscendGreaterOrEqual(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	db.Update("test", func(t *Tx) error {
 		t.CreateIndex("value", INT_INDEX)
@@ -98,15 +98,15 @@ func TestTx_AscendGreaterOrEqual(t *testing.T) {
 		return err
 	})
 	if count != 255 {
-		t.Errorf("Failure: t.AscendGreaterOrEqual(...) unexpected iteration count")
+		t.Error("Failure: t.AscendGreaterOrEqual(...) unexpected iteration count")
 	}
 	if icount != 157 {
-		t.Errorf("Failure: t.AscendGreaterOrEqual(...) unexpected iteration count")
+		t.Error("Failure: t.AscendGreaterOrEqual(...) unexpected iteration count")
 	}
 	//time.Sleep(time.Second * 2)
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -117,23 +117,23 @@ func TestTx_AscendLessThan(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	db.Update("test", func(t *Tx) error {
 		t.CreateIndex("value", INT_INDEX)
@@ -155,15 +155,15 @@ func TestTx_AscendLessThan(t *testing.T) {
 		return err
 	})
 	if count != 174 {
-		t.Errorf("Failure: t.AscendLessThan(...) unexpected iteration count")
+		t.Error("Failure: t.AscendLessThan(...) unexpected iteration count")
 	}
 	if icount != 99 {
-		t.Errorf("Failure: t.AscendLessThan(...) unexpected iteration count")
+		t.Error("Failure: t.AscendLessThan(...) unexpected iteration count")
 	}
 	//time.Sleep(time.Second * 2)
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -174,23 +174,23 @@ func TestTx_AscendRange(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	db.Update("test", func(t *Tx) error {
 		t.CreateIndex("value", INT_INDEX)
@@ -213,15 +213,15 @@ func TestTx_AscendRange(t *testing.T) {
 		return err
 	})
 	if count != 173 {
-		t.Errorf("Failure: t.AscendRange(...) unexpected iteration count")
+		t.Error("Failure: t.AscendRange(...) unexpected iteration count")
 	}
 	if icount != 100 {
-		t.Errorf("Failure: t.AscendRange(...) unexpected iteration count")
+		t.Error("Failure: t.AscendRange(...) unexpected iteration count")
 	}
 	//time.Sleep(time.Second * 2)
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -232,23 +232,23 @@ func TestTx_Descend(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	count := 0
 	db.View("test", func(t *Tx) error {
@@ -260,12 +260,12 @@ func TestTx_Descend(t *testing.T) {
 	})
 	fmt.Println(count)
 	if count != 256 {
-		t.Errorf("Failure: t.Descend(...) unexpected iteration count")
+		t.Error("Failure: t.Descend(...) unexpected iteration count")
 	}
 	//time.Sleep(time.Second * 2)
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -276,23 +276,23 @@ func TestTx_DescendGreaterThan(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	db.Update("test", func(t *Tx) error {
 		t.CreateIndex("value", INT_INDEX)
@@ -314,15 +314,15 @@ func TestTx_DescendGreaterThan(t *testing.T) {
 		return err
 	})
 	if count != 254 {
-		t.Errorf("Failure: t.DescendGreaterThan(...) unexpected iteration count")
+		t.Error("Failure: t.DescendGreaterThan(...) unexpected iteration count")
 	}
 	if icount != 156 {
-		t.Errorf("Failure: t.DescendGreaterThan(...) unexpected iteration count")
+		t.Error("Failure: t.DescendGreaterThan(...) unexpected iteration count")
 	}
 	//time.Sleep(time.Second * 2)
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -333,23 +333,23 @@ func TestTx_DescendLessOrEqual(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	db.Update("test", func(t *Tx) error {
 		t.CreateIndex("value", INT_INDEX)
@@ -371,15 +371,15 @@ func TestTx_DescendLessOrEqual(t *testing.T) {
 		return err
 	})
 	if count != 175 {
-		t.Errorf("Failure: t.DescendLessOrEqual(...) unexpected iteration count")
+		t.Error("Failure: t.DescendLessOrEqual(...) unexpected iteration count")
 	}
 	if icount != 100 {
-		t.Errorf("Failure: t.DescendLessOrEqual(...) unexpected iteration count")
+		t.Error("Failure: t.DescendLessOrEqual(...) unexpected iteration count")
 	}
 	//time.Sleep(time.Second * 2)
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -390,23 +390,23 @@ func TestTx_DescendRange(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	db.Update("test", func(t *Tx) error {
 		t.CreateIndex("value", INT_INDEX)
@@ -429,15 +429,15 @@ func TestTx_DescendRange(t *testing.T) {
 		return err
 	})
 	if count != 173 {
-		t.Errorf("Failure: t.DescendRange(...) unexpected iteration count")
+		t.Error("Failure: t.DescendRange(...) unexpected iteration count")
 	}
 	if icount != 100 {
-		t.Errorf("Failure: t.DescendRange(...) unexpected iteration count")
+		t.Error("Failure: t.DescendRange(...) unexpected iteration count")
 	}
 	//time.Sleep(time.Second * 2)
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -448,23 +448,23 @@ func TestTx_Get(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	eopt, _ := NewEntryOptions()
 	e, _ := NewEntry("key-1", "{ \"value\":\"100\", \"coords\": ["+strconv.Itoa(999)+", "+strconv.Itoa(999)+"]}", true, eopt)
@@ -474,14 +474,14 @@ func TestTx_Get(t *testing.T) {
 		return err
 	})
 	if eret == nil {
-		t.Errorf("Failure: t.Get(e) returned nil entry")
+		t.Error("Failure: t.Get(e) returned nil entry")
 	}
 	if eret.k != "key-1" {
-		t.Errorf("Failure: t.Get(e) returned incorrect entry")
+		t.Error("Failure: t.Get(e) returned incorrect entry")
 	}
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -492,23 +492,23 @@ func TestTx_Set(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	eopt, _ := NewEntryOptions()
 	e, _ := NewEntry("key-999", "{ \"value\":\"999\", \"coords\": ["+strconv.Itoa(999)+", "+strconv.Itoa(999)+"]}", true, eopt)
@@ -519,14 +519,14 @@ func TestTx_Set(t *testing.T) {
 		return err
 	})
 	if eret == nil {
-		t.Errorf("Failure: t.Get(e) returned nil entry")
+		t.Error("Failure: t.Get(e) returned nil entry")
 	}
 	if eret.k != "key-999" {
-		t.Errorf("Failure: t.Get(e) returned incorrect entry")
+		t.Error("Failure: t.Get(e) returned incorrect entry")
 	}
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -537,23 +537,23 @@ func TestTx_Delete(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	eopt, _ := NewEntryOptions()
 	e, _ := NewEntry("key-999", "{ \"value\":\"999\", \"coords\": ["+strconv.Itoa(999)+", "+strconv.Itoa(999)+"]}", true, eopt)
@@ -565,14 +565,14 @@ func TestTx_Delete(t *testing.T) {
 		return err
 	})
 	if eret == nil {
-		t.Errorf("Failure: t.Get(e) returned nil entry")
+		t.Error("Failure: t.Get(e) returned nil entry")
 	}
 	if eret.k != "key-999" {
-		t.Errorf("Failure: t.Get(e) returned incorrect entry")
+		t.Error("Failure: t.Get(e) returned incorrect entry")
 	}
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -583,23 +583,23 @@ func TestTx_CreateIndex(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	db.Update("test", func(t *Tx) error {
 		t.CreateIndex("value", INT_INDEX)
@@ -611,11 +611,11 @@ func TestTx_CreateIndex(t *testing.T) {
 		return err
 	})
 	if len(idxs) != 1 {
-		t.Errorf("Failure: t.Indexes() returned invalid indexes")
+		t.Error("Failure: t.Indexes() returned invalid indexes")
 	}
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -626,23 +626,23 @@ func TestTx_DropIndex(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	db.Update("test", func(t *Tx) error {
 		t.CreateIndex("value", INT_INDEX)
@@ -655,11 +655,11 @@ func TestTx_DropIndex(t *testing.T) {
 		return err
 	})
 	if len(idxs) != 0 {
-		t.Errorf("Failure: t.Indexes() returned invalid indexes")
+		t.Error("Failure: t.Indexes() returned invalid indexes")
 	}
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -670,23 +670,23 @@ func TestTx_Indexes(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	db.Update("test", func(t *Tx) error {
 		t.CreateIndex("value", INT_INDEX)
@@ -699,11 +699,11 @@ func TestTx_Indexes(t *testing.T) {
 		return err
 	})
 	if len(idxs) != 2 {
-		t.Errorf("Failure: t.Indexes() returned invalid indexes")
+		t.Error("Failure: t.Indexes() returned invalid indexes")
 	}
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -714,23 +714,23 @@ func TestTx_Min(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	var eret *Entry
 	db.View("test", func(t *Tx) error {
@@ -739,11 +739,11 @@ func TestTx_Min(t *testing.T) {
 	})
 	fmt.Println(eret)
 	if eret.k != "key-0" {
-		t.Errorf("Failure: t.Min() returned incorrect minimum value")
+		t.Error("Failure: t.Min() returned incorrect minimum value")
 	}
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -754,23 +754,23 @@ func TestTx_Max(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	var eret *Entry
 	db.View("test", func(t *Tx) error {
@@ -779,11 +779,11 @@ func TestTx_Max(t *testing.T) {
 	})
 	fmt.Println(eret)
 	if eret.k != "key-99" {
-		t.Errorf("Failure: t.Max() returned incorrect minimum value")
+		t.Error("Failure: t.Max() returned incorrect minimum value")
 	}
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -794,23 +794,23 @@ func TestTx_Has(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	eopt, _ := NewEntryOptions()
 	e, _ := NewEntry("key-25", "{ \"value\":\"999\", \"coords\": ["+strconv.Itoa(999)+", "+strconv.Itoa(999)+"]}", true, eopt)
@@ -821,11 +821,11 @@ func TestTx_Has(t *testing.T) {
 	})
 	fmt.Println(eret)
 	if !eret {
-		t.Errorf("Failure: t.Has() returned incorrect membership")
+		t.Error("Failure: t.Has() returned incorrect membership")
 	}
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -836,23 +836,23 @@ func TestTx_Size(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	var size int
 	db.View("test", func(t *Tx) error {
@@ -861,11 +861,11 @@ func TestTx_Size(t *testing.T) {
 	})
 	fmt.Println(size)
 	if size != 256 {
-		t.Errorf("Failure: t.Size() returned incorrect bucket size")
+		t.Error("Failure: t.Size() returned incorrect bucket size")
 	}
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -876,23 +876,23 @@ func TestTx_SearchIntersect(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	var entries []*Entry
 	db.View("test", func(t *Tx) error {
@@ -902,11 +902,11 @@ func TestTx_SearchIntersect(t *testing.T) {
 		return err
 	})
 	if len(entries) != 256 {
-		t.Errorf("Failure: t.SearchIntersect() returned an invalid result set")
+		t.Error("Failure: t.SearchIntersect() returned an invalid result set")
 	}
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -917,23 +917,23 @@ func TestTx_SearchWithinRadius(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	var entries []*Entry
 	db.View("test", func(t *Tx) error {
@@ -942,11 +942,11 @@ func TestTx_SearchWithinRadius(t *testing.T) {
 		return err
 	})
 	if len(entries) != 8 {
-		t.Errorf("Failure: t.SearchWithinRadius() returned an invalid result set")
+		t.Error("Failure: t.SearchWithinRadius() returned an invalid result set")
 	}
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -957,23 +957,23 @@ func TestTx_NearestNeighbors(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	var entries []*Entry
 	db.View("test", func(t *Tx) error {
@@ -983,11 +983,11 @@ func TestTx_NearestNeighbors(t *testing.T) {
 		return err
 	})
 	if len(entries) != 10 {
-		t.Errorf("Failure: t.NearestNeighbors() returned an invalid result set")
+		t.Error("Failure: t.NearestNeighbors() returned an invalid result set")
 	}
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
 
@@ -998,23 +998,23 @@ func TestTx_NearestNeighbor(t *testing.T) {
 		t.Errorf("Failure: NewStitchDB(c) returned error \"%v\"", err)
 	}
 	if db == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db got nil")
 	}
 	if db.config == nil {
-		t.Errorf("Failure: NewStitchDB(c) expected not nil db.config got nil")
+		t.Error("Failure: NewStitchDB(c) expected not nil db.config got nil")
 	}
 	if !db.config.persist || !db.config.developer || !db.config.performanceMonitor {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.config.dirPath != "stitch/test/db/" || db.config.syncFreq != MNGFREQ || db.config.manageFrequency != time.Second || db.config.bucketFileMultLimit != 10 {
-		t.Errorf("Failure: NewStitchDB(c) resulted in invalid db configuration")
+		t.Error("Failure: NewStitchDB(c) resulted in invalid db configuration")
 	}
 	if db.GetConfig() != c {
-		t.Errorf("Failure: db.GetConfig() returned config not equal to original config")
+		t.Error("Failure: db.GetConfig() returned config not equal to original config")
 	}
 	db.Open()
 	if !db.open {
-		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
+		t.Error("Failure: db.Open() expected db to be open got db.open == false")
 	}
 	var entry *Entry
 	db.View("test", func(t *Tx) error {
@@ -1024,10 +1024,10 @@ func TestTx_NearestNeighbor(t *testing.T) {
 		return err
 	})
 	if entry.k != "key-0" {
-		t.Errorf("Failure: t.NearestNeighbor() returned an invalid result set")
+		t.Error("Failure: t.NearestNeighbor() returned an invalid result set")
 	}
 	db.Close()
 	if db.open {
-		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
+		t.Error("Failure: db.Close() expected db to be not open got db.open == true")
 	}
 }
