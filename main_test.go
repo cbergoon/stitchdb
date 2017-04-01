@@ -9,13 +9,12 @@ import (
 )
 
 func setup() {
-	fmt.Println("Starting Setup")
 	c, _ := NewConfig(Persist, DirPath("stitch/test/db/"), Sync(NONE), ManageFrequency(1*time.Second), Developer, PerformanceMonitor, BucketFileMultLimit(10))
 	s, _ := NewStitchDB(c)
 
 	s.Open()
 
-	opts, _ := NewBucketOptions(BTreeDegree(32))
+	opts, _ := NewBucketOptions(BTreeDegree(32), Geo)
 	s.CreateBucket("test", opts)
 
 	s.Update("test", func(t *Tx) error {
@@ -31,16 +30,13 @@ func setup() {
 	//time.Sleep(time.Second * 2)
 
 	s.Close()
-	fmt.Println("Setup Complete")
 }
 
 func teardown() {
-	fmt.Println("Starting Teardown")
 	err := os.RemoveAll("stitch/")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("Teardown Complete")
 }
 
 func TestMain(m *testing.M) {
