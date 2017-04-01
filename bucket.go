@@ -51,8 +51,8 @@ type iItype struct {
 	db *StitchDB
 }
 
-//NewBucket creates a new bucket for the specified db with the provided options.
-func NewBucket(db *StitchDB, bucketOptions *BucketOptions, name string) (*Bucket, error) {
+//newBucket creates a new bucket for the specified db with the provided options.
+func newBucket(db *StitchDB, bucketOptions *BucketOptions, name string) (*Bucket, error) {
 	return &Bucket{
 		name:         name,
 		db:           db,
@@ -188,9 +188,9 @@ func (b *Bucket) writeInsertEntry(e *Entry) {
 	b.aofbuf = append(b.aofbuf, stmt...)
 }
 
-//OpenBucket opens and loads a bucket. It is expected that the manager is started by the caller of this function after
+//openBucket opens and loads a bucket. It is expected that the manager is started by the caller of this function after
 //bucket is open. Returns an error if the file could not be opened or created or if the bucket file could not be loaded.
-func (b *Bucket) OpenBucket(file string) error {
+func (b *Bucket) openBucket(file string) error {
 	b.lock(MODE_READ_WRITE)
 	defer b.unlock(MODE_READ_WRITE)
 	b.open = true
@@ -208,10 +208,10 @@ func (b *Bucket) OpenBucket(file string) error {
 	return nil
 }
 
-//Close closes the bucket flushing the write buffer to disk. Performs a sync regardless of frequency setting as it is not
-//guarenteed that the manager will execute again before exiting. Returns an error if the write to the bucket file failed,
+//close closes the bucket flushing the write buffer to disk. Performs a sync regardless of frequency setting as it is not
+//guaranteed that the manager will execute again before exiting. Returns an error if the write to the bucket file failed,
 //the file sync failed, or if the file fails to close.
-func (b *Bucket) Close() error {
+func (b *Bucket) close() error {
 	b.lock(MODE_READ_WRITE)
 	defer b.unlock(MODE_READ_WRITE)
 	if b.db.config.persist {
@@ -328,6 +328,7 @@ func (b *Bucket) delete(key *Entry) *Entry {
 				}
 			}
 		}
+		return pentry
 	}
 	return nil
 }
@@ -338,7 +339,7 @@ func (b *Bucket) startTx(mode RWMode) (*Tx, error) {
 	if b.db == nil || !b.db.open || b == nil || !b.open {
 		return nil, errors.New("error: bucket: resource is not open")
 	}
-	tx, err := NewTx(b.db, b, mode)
+	tx, err := newTx(b.db, b, mode)
 	if err != nil {
 		return nil, errors.Annotate(err, "error: bucket: failed to create transaction")
 	}
@@ -356,17 +357,17 @@ func (b *Bucket) handleTx(mode RWMode, f func(t *Tx) error) error {
 	}
 	err = f(tx)
 	if err != nil {
-		err := tx.RollbackTx()
+		err := tx.rollbackTx()
 		return err
 	}
 	if tx.mode == MODE_READ_WRITE {
-		err := tx.CommitTx()
+		err := tx.commitTx()
 		return err
 	} else if mode == MODE_READ {
-		err := tx.RollbackTx()
+		err := tx.rollbackTx()
 		return err
 	} else {
-		err := tx.RollbackTx()
+		err := tx.rollbackTx()
 		return err
 	}
 }
@@ -538,5 +539,5 @@ func NewBucketFromStmt(db *StitchDB, stmtParts []string) (*Bucket, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "error: bucket: failed to parse statement")
 	}
-	return NewBucket(db, opts, stmtParts[0])
+	return newBucket(db, opts, stmtParts[0])
 }

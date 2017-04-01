@@ -9,10 +9,11 @@
 * Wiki
 * Issues
 * Tests
-  * bucket, tx, db
+  * tx
 * Logo
 * Benchmarks
 * Improve resolution of times for invalid/expires
+* Add version badge
 
 #### Notes
 * Query Language

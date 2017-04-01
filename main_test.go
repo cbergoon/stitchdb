@@ -28,7 +28,7 @@ func setup() {
 		return nil
 	})
 
-	time.Sleep(time.Second * 2)
+	//time.Sleep(time.Second * 2)
 
 	s.Close()
 	fmt.Println("Setup Complete")
@@ -37,7 +37,9 @@ func setup() {
 func teardown() {
 	fmt.Println("Starting Teardown")
 	err := os.RemoveAll("stitch/")
-	fmt.Println(err)
+	if err != nil {
+		fmt.Println(err)
+	}
 	fmt.Println("Teardown Complete")
 }
 

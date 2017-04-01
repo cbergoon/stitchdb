@@ -37,8 +37,8 @@ type Tx struct {
 	iterating bool      //True if iterating over tree; used to prevent effects of updates while iterating.
 }
 
-//NewTx creates a new transaction for the DB and bucket provided with the RW specified modifier.
-func NewTx(db *StitchDB, bkt *Bucket, mode RWMode) (*Tx, error) {
+//newTx creates a new transaction for the DB and bucket provided with the RW specified modifier.
+func newTx(db *StitchDB, bkt *Bucket, mode RWMode) (*Tx, error) {
 	return &Tx{
 		db:   db,
 		bkt:  bkt,
@@ -51,9 +51,9 @@ func NewTx(db *StitchDB, bkt *Bucket, mode RWMode) (*Tx, error) {
 	}, nil
 }
 
-//RollbackTx iterates over backward changes stored in rollback context rbctx and returns the bucket to a state
+//rollbackTx iterates over backward changes stored in rollback context rbctx and returns the bucket to a state
 //equivalent to the state of the bucket pre-transaction.
-func (t *Tx) RollbackTx() error {
+func (t *Tx) rollbackTx() error {
 	for key, entry := range t.rbctx.backward {
 		if entry == nil { //Entry was inserted during transaction; delete
 			t.bkt.delete(&Entry{k: key})
@@ -71,8 +71,8 @@ func (t *Tx) RollbackTx() error {
 	return nil
 }
 
-//CommitTx iterates over forward changes to the bucket and persists changes to the AOF.
-func (t *Tx) CommitTx() error {
+//commitTx iterates over forward changes to the bucket and persists changes to the AOF.
+func (t *Tx) commitTx() error {
 	if !t.db.open {
 		return errors.New("error: tx: db is closed")
 	}
@@ -211,7 +211,6 @@ func (t *Tx) Descend(index string, f func(e *Entry) bool) error {
 	} else {
 		t.bkt.data.Descend(i)
 	}
-	t.bkt.data.Descend(i)
 	return nil
 }
 

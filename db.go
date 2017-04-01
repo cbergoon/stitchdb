@@ -45,7 +45,7 @@ func NewStitchDB(config *Config) (*StitchDB, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "error: db: failed to create system bucket options")
 	}
-	sysbkt, err := NewBucket(stitch, sysbktopts, "_sys")
+	sysbkt, err := newBucket(stitch, sysbktopts, "_sys")
 	if err != nil {
 		return nil, errors.Annotate(err, "error: db: failed to create system bucket")
 	}
@@ -121,8 +121,8 @@ func (db *StitchDB) Open() error {
 					return errors.Annotate(err, "error: db: failed to create bucket from statement")
 				}
 				db.buckets[bktName] = bucket
-				db.buckets[bktName].OpenBucket(db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION))
-				fmt.Println(db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION))
+				db.buckets[bktName].openBucket(db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION))
+				//fmt.Println(db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION))
 			}
 		}
 	}
@@ -140,13 +140,13 @@ func (db *StitchDB) Close() error {
 		return errors.New("error: db: db is closed")
 	}
 	for key := range db.buckets {
-		err := db.buckets[key].Close()
+		err := db.buckets[key].close()
 		if err != nil {
 			return errors.Annotate(err, "error: db: failed to close bucket")
 		}
 		db.buckets[key] = nil
 	}
-	db.system.Close()
+	db.system.close()
 	if db.config.persist && db.bktcfgf != nil {
 		err := db.bktcfgf.Sync()
 		if err != nil {
@@ -315,13 +315,13 @@ func (db *StitchDB) CreateBucket(name string, options *BucketOptions) error {
 	}
 	bktName := strings.TrimSpace(name)
 	bktFilePath := db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION)
-	bucket, err := NewBucket(db, options, bktName)
+	bucket, err := newBucket(db, options, bktName)
 	if err != nil {
 		return errors.Annotate(err, "error: db: failed to create bucket")
 	}
 
 	db.buckets[bktName] = bucket
-	err = db.buckets[bktName].OpenBucket(bktFilePath)
+	err = db.buckets[bktName].openBucket(bktFilePath)
 	if err != nil {
 		return errors.Annotate(err, "error: db: failed to open bucket")
 	}
@@ -358,7 +358,7 @@ func (db *StitchDB) DropBucket(name string) error {
 		return errors.Annotate(err, "error: db: invalid bucket")
 	}
 	stmt := bucket.bucketDropStmt()
-	bucket.Close()
+	bucket.close()
 	bucket = nil
 	delete(db.buckets, bktName)
 

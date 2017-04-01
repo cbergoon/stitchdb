@@ -75,7 +75,7 @@ func TestStitchDB_Close(t *testing.T) {
 	if !db.open {
 		t.Errorf("Failure: db.Open() expected db to be open got db.open == false")
 	}
-	time.Sleep(time.Second * 2)
+	//time.Sleep(time.Second * 2)
 	db.Close()
 	if db.open {
 		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
@@ -170,7 +170,7 @@ func TestStitchDB_View(t *testing.T) {
 	if count != 256 {
 		t.Errorf("Failure: db.View(...) iteration with transaction failed")
 	}
-	time.Sleep(time.Second * 2)
+	//time.Sleep(time.Second * 2)
 	db.Close()
 	if db.open {
 		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
@@ -234,7 +234,7 @@ func TestStitchDB_Update(t *testing.T) {
 	if count != 256 {
 		t.Errorf("Failure: db.View(...) iteration with transaction failed")
 	}
-	time.Sleep(time.Second * 2)
+	//time.Sleep(time.Second * 2)
 	db.Close()
 	if db.open {
 		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
@@ -300,7 +300,7 @@ func TestStitchDB_CreateBucket(t *testing.T) {
 	if count != 0 {
 		t.Errorf("Failure: db.View(...) iteration with transaction failed")
 	}
-	time.Sleep(time.Second * 2)
+	//time.Sleep(time.Second * 2)
 	db.Close()
 	if db.open {
 		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")
@@ -338,7 +338,7 @@ func TestStitchDB_DropBucket(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failure: db.DropBucket(\"new\") returned error \"%v\"", err)
 	}
-	time.Sleep(time.Second * 2)
+	//time.Sleep(time.Second * 2)
 	db.Close()
 	if db.open {
 		t.Errorf("Failure: db.Close() expected db to be not open got db.open == true")

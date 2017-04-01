@@ -13,12 +13,11 @@ Yet another key value store - StitchDB is an in memory key-value store persisted
 geo-location and time series data. StitchDB is accompanied by [StitchQL](https://github.com/cbergoon/stitchql) and [StitchServer](https://github.com/cbergoon/stitchserver). Together these projects 
 result in an entire database ecosystem complete with query language and standalone server daemon. 
 
-StitchDB's API is inspired by boltdb/bolt and tidwall/buntdband makes use of their elegant API design. StitchDB strives 
+StitchDB's API is inspired by boltdb/bolt and tidwall/buntdband making use of their elegant API design. StitchDB strives 
 to add a feature set that is tailored to a high throughput and less rigidly persistent use case with builtin multidimensional
 geo-location and time-series data support. 
 
-Hopefully, others will find this project useful for something you are working on or at least to learning resource. All 
-contributions, ideas, and criticisms are welcome.
+All contributions, ideas, and criticisms are welcome.
  
 ### Coming Soon
 * StitchQL: A Query Language for StitchDB

@@ -4,7 +4,6 @@
 package stitchdb
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -193,7 +192,6 @@ func TestEntry_IsInvalid(t *testing.T) {
 		t.Errorf("Failure: NewEntry(\"Test03\", \"\", true, options3) returned error \"%v\"", err)
 	}
 	// Entry 1 Pre-Sleep
-	fmt.Println(entry1.InvalidatesAt(), time.Now())
 	if !entry1.IsInvalid() {
 		t.Errorf("Failure: Expected entry1 to be invalid")
 	}
