@@ -373,6 +373,9 @@ func (b *Bucket) handleTx(mode RWMode, f func(t *Tx) error) error {
 
 //manager is the main execution loop for the bucket. The manager loop is executed at the specified frequency of the database.
 func (b *Bucket) manager() error {
+	if b == nil || b.db == nil || b.db.config == nil {
+		return nil
+	}
 	mngct := time.NewTicker(b.db.config.manageFrequency)
 	defer mngct.Stop()
 	for range mngct.C {
