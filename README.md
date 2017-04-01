@@ -5,7 +5,7 @@
 <br>
 <a href="https://travis-ci.org/cbergoon/stitchdb"><img src="https://travis-ci.org/cbergoon/stitchdb.svg?branch=master" alt="Build"></a>
 <a href="https://goreportcard.com/report/github.com/cbergoon/stitchdb"><img src="https://goreportcard.com/badge/github.com/cbergoon/stitchdb" alt="Report"></a>
-<a href="http://gocover.io/github.com/cbergoon/stitchdb"><img src="https://img.shields.io/badge/coverage-0%25-lightgrey.svg" alt="Coverage"></a>
+<a href="http://gocover.io/github.com/cbergoon/stitchdb"><img src="https://img.shields.io/badge/coverage-76%25-brightgreen.svg" alt="Coverage"></a>
 <a href="https://godoc.org/github.com/cbergoon/stitchdb"><img src="https://img.shields.io/badge/godoc-reference-brightgreen.svg" alt="Docs"></a>
 <a href="http://gocover.io/github.com/cbergoon/stitchdb"><img src="https://img.shields.io/badge/version-0.1.0-brightgreen.svg" alt="Version"></a>
 </p>
