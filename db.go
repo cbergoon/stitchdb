@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"encoding/json"
+
 	"github.com/juju/errors"
 )
 
@@ -25,13 +27,16 @@ const (
 
 //StitchDB represents the database object. All operations on the database originate from this object.
 type StitchDB struct {
-	config    *Config
-	dblock    sync.RWMutex
-	open      bool
-	buckets   map[string]*Bucket
-	system    *Bucket
-	bktcfgf   *os.File
-	bktcfgfrc int
+	config       *Config
+	dblock       sync.RWMutex
+	open         bool
+	buckets      map[string]*Bucket
+	system       *Bucket
+	systemperf   *Bucket
+	bktcfgf      *os.File
+	bktcfgfrc    int
+	sysntry      *SystemEntry
+	sysperfentry *SystemPerformanceEntry
 }
 
 //NewStitchDB returns a new StitchDB with the specified configuration. Note: this function only creates the representation
@@ -41,7 +46,7 @@ func NewStitchDB(config *Config) (*StitchDB, error) {
 		config:  config,
 		buckets: make(map[string]*Bucket),
 	}
-	sysbktopts, err := NewBucketOptions(BTreeDegree(32), System)
+	sysbktopts, err := NewBucketOptions(BTreeDegree(32), System, Time)
 	if err != nil {
 		return nil, errors.Annotate(err, "error: db: failed to create system bucket options")
 	}
@@ -50,6 +55,13 @@ func NewStitchDB(config *Config) (*StitchDB, error) {
 		return nil, errors.Annotate(err, "error: db: failed to create system bucket")
 	}
 	stitch.system = sysbkt
+	if stitch.config.performanceMonitor {
+		sysperfbkt, err := newBucket(stitch, sysbktopts, "_sysperf")
+		if err != nil {
+			return nil, errors.Annotate(err, "error: db: failed to create system performance bucket")
+		}
+		stitch.systemperf = sysperfbkt
+	}
 	return stitch, nil
 }
 
@@ -103,8 +115,11 @@ func (db *StitchDB) getDBFilePath(fileName string) string {
 //the statements within, creates the buckets stored in the file, and opens each bucket. Returns an error if the process was
 //not able to create the directory, failed to read the stitch db
 func (db *StitchDB) Open() error {
+	se := &SystemEntry{
+		Version: STITCH_VERSION,
+	}
+	startUpTimeStart := time.Now()
 	db.lock(MODE_READ_WRITE)
-	defer db.unlock(MODE_READ_WRITE)
 	if db.config.persist {
 		err := os.MkdirAll(db.config.dirPath, os.ModePerm)
 		if err != nil {
@@ -114,6 +129,7 @@ func (db *StitchDB) Open() error {
 		if err != nil {
 			return errors.Annotate(err, "error: db: failed to read stitch file")
 		}
+		loadStart := time.Now()
 		for bktName, bktStmtParts := range bktStmts {
 			if bktStmtParts != nil && len(bktStmtParts) > 0 {
 				bucket, err := NewBucketFromStmt(db, bktStmts[bktName])
@@ -124,10 +140,35 @@ func (db *StitchDB) Open() error {
 				db.buckets[bktName].openBucket(db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION))
 				//fmt.Println(db.getDBFilePath(bktName + BUCKET_FILE_EXTENSION))
 			}
+			se.BucketList = append(se.BucketList, bktName)
 		}
+		se.LoadTime = time.Since(loadStart)
+		se.BucketCount = len(db.buckets)
+	}
+	se.StartUpTime = time.Since(startUpTimeStart)
+	db.system.openBucket(db.getDBFilePath("_sys" + BUCKET_FILE_EXTENSION))
+	if db.config.performanceMonitor {
+		db.systemperf.openBucket(db.getDBFilePath("_sysperf" + BUCKET_FILE_EXTENSION))
 	}
 	db.open = true
 	go db.runManager()
+	db.unlock(MODE_READ_WRITE)
+	db.Update("_sys", func(t *Tx) error {
+		entryOptions, err := NewEntryOptions()
+		if err != nil {
+			return err
+		}
+		j, err := json.Marshal(se)
+		if err != nil {
+			return err
+		}
+		entry, err := NewEntry(fmt.Sprint(time.Now().UnixNano()), string(j), false, entryOptions)
+		_, err = t.Set(entry)
+		if err != nil {
+			return err
+		}
+		return err
+	})
 	return nil
 }
 
@@ -147,6 +188,7 @@ func (db *StitchDB) Close() error {
 		db.buckets[key] = nil
 	}
 	db.system.close()
+	db.systemperf.close()
 	if db.config.persist && db.bktcfgf != nil {
 		err := db.bktcfgf.Sync()
 		if err != nil {
@@ -160,6 +202,7 @@ func (db *StitchDB) Close() error {
 	db.open = false
 	db.buckets = nil
 	db.system = nil
+	db.systemperf = nil
 	db.bktcfgf = nil
 	// Pause for manageFrequency * 2 to allow bucket managers to exit gracefully.
 	//time.Sleep(db.config.manageFrequency * 2)
@@ -222,6 +265,9 @@ func (db *StitchDB) runManager() error {
 	if db.system != nil {
 		go db.system.manager()
 	}
+	if db.systemperf != nil {
+		go db.systemperf.manager()
+	}
 	for key := range db.buckets {
 		go db.buckets[key].manager()
 	}
@@ -249,6 +295,10 @@ func (db *StitchDB) getBucket(name string) (*Bucket, error) {
 	bktName := strings.TrimSpace(name)
 	if name == "_sys" {
 		b = db.system
+		ok = true
+	} else if name == "_sysperf" {
+		b = db.systemperf
+		ok = true
 	} else {
 		b, ok = db.buckets[bktName]
 	}

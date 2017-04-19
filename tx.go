@@ -30,11 +30,12 @@ type RbCtx struct {
 
 //Tx represents the a transaction including rollback information.
 type Tx struct {
-	db        *StitchDB //DB that bucket is contained in. See bkt.
-	bkt       *Bucket   //Bucket that the this tx is operating on
-	mode      RWMode    //Describes if tx is read-only or read-write
-	rbctx     *RbCtx    //Context containing changes to bucket
-	iterating bool      //True if iterating over tree; used to prevent effects of updates while iterating.
+	db        *StitchDB                 //DB that bucket is contained in. See bkt.
+	bkt       *Bucket                   //Bucket that the this tx is operating on
+	mode      RWMode                    //Describes if tx is read-only or read-write
+	rbctx     *RbCtx                    //Context containing changes to bucket
+	iterating bool                      //True if iterating over tree; used to prevent effects of updates while iterating.
+	sysperf   []*SystemPerformanceEntry //Slice of entries to be committed; contains matrics on tx operations
 }
 
 //newTx creates a new transaction for the DB and bucket provided with the RW specified modifier.

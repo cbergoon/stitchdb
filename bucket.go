@@ -19,26 +19,26 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-//Todo: Replace with the StitchDB config value.
-
 //COMPACT_FACTOR is the Multiplier factor for to determine when to compact log.
 const COMPACT_FACTOR int = 10
 
 //Bucket represents a bucket in the database. Think 'table' but for key-value store.
 type Bucket struct {
-	name         string            //Name of the bucket.
-	db           *StitchDB         //Reference to containing DB.
-	bktlock      sync.RWMutex      //Lock for bucket.
-	data         *btree.BTree      //Primary tree for bucket.
-	eviction     *btree.BTree      //Data for bucket ordered by eviction time.
-	invalidation *btree.BTree      //Data for bucket ordered by invalidation time.
-	rtree        *rtreego.Rtree    //Rtree of data for geolocation.
-	indexes      map[string]*Index //Map of indexes built over data.
-	file         *os.File          //Bucket Append Only File.
-	rct          uint64            //AOF row count.
-	open         bool              //Indicated the status of the bucket.
-	options      *BucketOptions    //Options for the bucket.
-	aofbuf       []byte            //AOF write buffer.
+	name         string                  //Name of the bucket.
+	db           *StitchDB               //Reference to containing DB.
+	bktlock      sync.RWMutex            //Lock for bucket.
+	data         *btree.BTree            //Primary tree for bucket.
+	eviction     *btree.BTree            //Data for bucket ordered by eviction time.
+	invalidation *btree.BTree            //Data for bucket ordered by invalidation time.
+	rtree        *rtreego.Rtree          //Rtree of data for geolocation.
+	indexes      map[string]*Index       //Map of indexes built over data.
+	file         *os.File                //Bucket Append Only File.
+	rct          uint64                  //AOF row count.
+	open         bool                    //Indicated the status of the bucket.
+	options      *BucketOptions          //Options for the bucket.
+	aofbuf       []byte                  //AOF write buffer.
+	sysntry      *SystemEntry            //System entry to be written on management cycle.
+	sysperfentry *SystemPerformanceEntry //System performance metrics written on management cycle.
 }
 
 //eItype provides a basic context via type for tree iType.
