@@ -116,7 +116,8 @@ func (db *StitchDB) getDBFilePath(fileName string) string {
 //not able to create the directory, failed to read the stitch db
 func (db *StitchDB) Open() error {
 	se := &SystemEntry{
-		Version: STITCH_VERSION,
+		Version:         STITCH_VERSION,
+		InitialLoadTime: time.Now(),
 	}
 	startUpTimeStart := time.Now()
 	db.lock(MODE_READ_WRITE)
@@ -260,6 +261,8 @@ func (db *StitchDB) runManager() error {
 				}
 			}
 			db.unlock(MODE_READ_WRITE)
+
+			//Todo (cbergoon): Add SysPerf Logic/Write
 		}
 	}()
 	if db.system != nil {

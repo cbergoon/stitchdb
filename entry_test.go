@@ -413,3 +413,59 @@ func TestGetEntryComparator(t *testing.T) {
 		t.Errorf("Failure: Expected non-nil comparator got nil")
 	}
 }
+
+func TestEntry_GetKey(t *testing.T) {
+	options, err := NewEntryOptions(ExpireTime(time.Now()), InvalidTime(time.Now()), Tol(9.9))
+	if err != nil {
+		t.Errorf("Failure: NewEntryOptions(ExpireTime(time.Now()), InvalidTime(time.Now()), Tol(9.9)) returned error \"%v\"", err)
+	}
+	entry1, err := NewEntryWithGeo("Test01", "", options)
+	if err != nil {
+		t.Errorf("Failure: NewEntryWithGeo(\"Test01\", \"\", options) returned error \"%v\"", err)
+	}
+	entry2, err := NewEntry("Test02", "", false, options)
+	if err != nil {
+		t.Errorf("Failure: NewEntry(\"Test02\", \"\", false, options) returned error \"%v\"", err)
+	}
+	entry3, err := NewEntry("Test03", "", true, options)
+	if err != nil {
+		t.Errorf("Failure: NewEntry(\"Test03\", \"\", true, options) returned error \"%v\"", err)
+	}
+	if entry1.GetKey() != "Test01" {
+		t.Errorf("Failure: Invalid key for entry expected \"Test01\" got %v", entry1.GetKey())
+	}
+	if entry2.GetKey() != "Test02" {
+		t.Errorf("Failure: Invalid key for entry expected \"Test02\" got %v", entry2.GetKey())
+	}
+	if entry3.GetKey() != "Test03" {
+		t.Errorf("Failure: Invalid key for entry expected \"Test03\" got %v", entry3.GetKey())
+	}
+}
+
+func TestEntry_GetValue(t *testing.T) {
+	options, err := NewEntryOptions(ExpireTime(time.Now()), InvalidTime(time.Now()), Tol(9.9))
+	if err != nil {
+		t.Errorf("Failure: NewEntryOptions(ExpireTime(time.Now()), InvalidTime(time.Now()), Tol(9.9)) returned error \"%v\"", err)
+	}
+	entry1, err := NewEntryWithGeo("Test01", "{\"mode\":1,\"bucket\":\"test\"}", options)
+	if err != nil {
+		t.Errorf("Failure: NewEntryWithGeo(\"Test01\", \"{\"mode\":1,\"bucket\":\"test\"}\", options) returned error \"%v\"", err)
+	}
+	entry2, err := NewEntry("Test02", "{\"mode\":2,\"bucket\":\"test\"}", false, options)
+	if err != nil {
+		t.Errorf("Failure: NewEntry(\"Test02\", \"{\"mode\":2,\"bucket\":\"test\"}\", false, options) returned error \"%v\"", err)
+	}
+	entry3, err := NewEntry("Test03", "{\"mode\":3,\"bucket\":\"test\"}", true, options)
+	if err != nil {
+		t.Errorf("Failure: NewEntry(\"Test03\", \"{\"mode\":3,\"bucket\":\"test\"}\", true, options) returned error \"%v\"", err)
+	}
+	if entry1.GetValue() != "{\"mode\":1,\"bucket\":\"test\"}" {
+		t.Errorf("Failure: Invalid key for entry expected \"{\"mode\":1,\"bucket\":\"test\"}\" got %v", entry1.GetValue())
+	}
+	if entry2.GetValue() != "{\"mode\":2,\"bucket\":\"test\"}" {
+		t.Errorf("Failure: Invalid key for entry expected \"{\"mode\":2,\"bucket\":\"test\"}\" got %v", entry2.GetValue())
+	}
+	if entry3.GetValue() != "{\"mode\":3,\"bucket\":\"test\"}" {
+		t.Errorf("Failure: Invalid key for entry expected \"{\"mode\":3,\"bucket\":\"test\"}\" got %v", entry3.GetValue())
+	}
+}

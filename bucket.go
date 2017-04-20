@@ -154,23 +154,21 @@ func parseEntryStmtTypeName(stmt string) (string, []string, error) {
 //Called from tx which has a RW lock.
 func (b *Bucket) writeAOFBuf() error {
 	if b.db.config.persist {
-		if b.db.config.writeFreq == MNGFREQ {
-			if len(b.aofbuf) > 0 {
-				written, err := b.file.Write(b.aofbuf)
-				if err != nil {
-					return errors.Annotate(err, "error: bucket: failed to write bucket file")
-				}
-				if written != len(b.aofbuf) {
-					return errors.New("error: bucket: failed to write bucket file")
-				}
-				if b.db.config.writeFreq == EACH {
-					err := b.file.Sync()
-					if err != nil {
-						errors.Annotate(err, "error: bucket: failed to sync file")
-					}
-				}
-				b.aofbuf = nil
+		if len(b.aofbuf) > 0 {
+			written, err := b.file.Write(b.aofbuf)
+			if err != nil {
+				return errors.Annotate(err, "error: bucket: failed to write bucket file")
 			}
+			if written != len(b.aofbuf) {
+				return errors.New("error: bucket: failed to write bucket file")
+			}
+			if b.db.config.syncFreq == EACH {
+				err := b.file.Sync()
+				if err != nil {
+					errors.Annotate(err, "error: bucket: failed to sync file")
+				}
+			}
+			b.aofbuf = nil
 		}
 	}
 	return nil
@@ -355,7 +353,17 @@ func (b *Bucket) handleTx(mode RWMode, f func(t *Tx) error) error {
 	if err != nil {
 		return err
 	}
+
+	startTime := time.Now()
 	err = f(tx)
+
+	tx.sysperf = &SystemPerformanceEntry{
+		Transaction: true,
+		Bucket:      tx.bkt.name,
+		Mode:        tx.mode,
+		TxTime:      time.Since(startTime),
+	}
+
 	if err != nil {
 		err := tx.rollbackTx()
 		return err
@@ -385,23 +393,21 @@ func (b *Bucket) manager() error {
 			break
 		}
 		if b.db.config.persist {
-			if b.db.config.writeFreq == MNGFREQ {
-				if len(b.aofbuf) > 0 {
-					_, err := b.file.Write(b.aofbuf)
+			if len(b.aofbuf) > 0 {
+				_, err := b.file.Write(b.aofbuf)
+				if err != nil {
+					fmt.Println(errors.ErrorStack(errors.Annotate(err, "error: bucket: failed to write to bucket file")))
+				}
+				b.aofbuf = nil
+				if b.db.config.syncFreq == EACH {
+					err := b.file.Sync()
 					if err != nil {
-						fmt.Println(errors.ErrorStack(errors.Annotate(err, "error: bucket: failed to write to bucket file")))
+						fmt.Println(errors.ErrorStack(errors.Annotate(err, "error: bucket: failed to sync1 bucket file")))
 					}
-					b.aofbuf = nil
-					if b.db.config.syncFreq == EACH {
-						err := b.file.Sync()
-						if err != nil {
-							fmt.Println(errors.ErrorStack(errors.Annotate(err, "error: bucket: failed to sync1 bucket file")))
-						}
-					} else if b.db.config.syncFreq == MNGFREQ {
-						err := b.file.Sync()
-						if err != nil {
-							fmt.Println(errors.ErrorStack(errors.Annotate(err, "error: bucket: failed to sync2 bucket file")))
-						}
+				} else if b.db.config.syncFreq == MNGFREQ {
+					err := b.file.Sync()
+					if err != nil {
+						fmt.Println(errors.ErrorStack(errors.Annotate(err, "error: bucket: failed to sync2 bucket file")))
 					}
 				}
 			}
@@ -444,6 +450,8 @@ func (b *Bucket) manager() error {
 		}
 
 		b.unlock(MODE_READ_WRITE)
+
+		//Todo (cbergoon): Add SysPerf Logic/Write
 	}
 	return nil
 }

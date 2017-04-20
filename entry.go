@@ -132,6 +132,16 @@ func (e *Entry) Bounds() *rtreego.Rect {
 	return e.location.ToRect(e.opts.tol)
 }
 
+//GetKey returns the key value of the entry.
+func (e *Entry) GetKey() string {
+	return e.k
+}
+
+//GetValue returns the value of the entry.
+func (e *Entry) GetValue() string {
+	return e.v
+}
+
 //GetEntryComparator returns a function that is used by the rtree to compare entries. This function will compare on the
 //key value (k) of the entry as a string.
 //Todo: Maybe make the returned function an option that can be set

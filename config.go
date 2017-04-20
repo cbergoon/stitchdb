@@ -26,7 +26,6 @@ type Config struct {
 	persist             bool          //Indicates if the db should be persisted to disk.
 	dirPath             string        //Path where db files should be stored.
 	syncFreq            IOFrequency   //Interval at which the db files should be sync'd.
-	writeFreq           IOFrequency   //Interval at which writes to the db should happen.
 	manageFrequency     time.Duration //Interval at which db's manager should execute.
 	developer           bool          //Enable developer mode.
 	performanceMonitor  bool          //Enable performance monitor.

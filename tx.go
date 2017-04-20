@@ -4,8 +4,11 @@
 package stitchdb
 
 import (
+	"encoding/json"
+	"fmt"
 	"math"
 	"strings"
+	"time"
 
 	"github.com/cbergoon/btree"
 	"github.com/dhconnelly/rtreego"
@@ -30,12 +33,12 @@ type RbCtx struct {
 
 //Tx represents the a transaction including rollback information.
 type Tx struct {
-	db        *StitchDB                 //DB that bucket is contained in. See bkt.
-	bkt       *Bucket                   //Bucket that the this tx is operating on
-	mode      RWMode                    //Describes if tx is read-only or read-write
-	rbctx     *RbCtx                    //Context containing changes to bucket
-	iterating bool                      //True if iterating over tree; used to prevent effects of updates while iterating.
-	sysperf   []*SystemPerformanceEntry //Slice of entries to be committed; contains matrics on tx operations
+	db        *StitchDB               //DB that bucket is contained in. See bkt.
+	bkt       *Bucket                 //Bucket that the this tx is operating on
+	mode      RWMode                  //Describes if tx is read-only or read-write
+	rbctx     *RbCtx                  //Context containing changes to bucket
+	iterating bool                    //True if iterating over tree; used to prevent effects of updates while iterating.
+	sysperf   *SystemPerformanceEntry //Slice of entries to be committed; contains matrics on tx operations
 }
 
 //newTx creates a new transaction for the DB and bucket provided with the RW specified modifier.
@@ -55,6 +58,7 @@ func newTx(db *StitchDB, bkt *Bucket, mode RWMode) (*Tx, error) {
 //rollbackTx iterates over backward changes stored in rollback context rbctx and returns the bucket to a state
 //equivalent to the state of the bucket pre-transaction.
 func (t *Tx) rollbackTx() error {
+	t.sysperf.Rollback = true
 	for key, entry := range t.rbctx.backward {
 		if entry == nil { //Entry was inserted during transaction; delete
 			t.bkt.delete(&Entry{k: key})
@@ -69,11 +73,31 @@ func (t *Tx) rollbackTx() error {
 		}
 	}
 	t.unlock()
+	if t.bkt.name != "_sysperf" {
+		t.db.Update("_sysperf", func(t *Tx) error {
+			entryOptions, err := NewEntryOptions()
+			if err != nil {
+				return err
+			}
+			j, err := json.Marshal(t.sysperf)
+			if err != nil {
+				return err
+			}
+			entry, err := NewEntry(fmt.Sprint(time.Now().UnixNano()), string(j), false, entryOptions)
+			_, err = t.Set(entry)
+			if err != nil {
+				return err
+			}
+			return err
+		})
+	}
 	return nil
 }
 
 //commitTx iterates over forward changes to the bucket and persists changes to the AOF.
 func (t *Tx) commitTx() error {
+	sysperf := t.sysperf
+	sysperf.Commit = true
 	if !t.db.open {
 		return errors.New("error: tx: db is closed")
 	}
@@ -91,6 +115,25 @@ func (t *Tx) commitTx() error {
 		t.bkt.writeAOFBuf()
 	}
 	t.unlock()
+
+	if t.bkt.name != "_sysperf" {
+		t.db.Update("_sysperf", func(t *Tx) error {
+			entryOptions, err := NewEntryOptions()
+			if err != nil {
+				return err
+			}
+			j, err := json.Marshal(sysperf)
+			if err != nil {
+				return err
+			}
+			entry, err := NewEntry(fmt.Sprint(time.Now().UnixNano()), string(j), false, entryOptions)
+			_, err = t.Set(entry)
+			if err != nil {
+				return err
+			}
+			return err
+		})
+	}
 	return nil
 }
 
